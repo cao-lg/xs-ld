@@ -19,6 +19,7 @@
       methods: 'ed-methods',
       accuracyBenchmark: 'ed-accuracy',
       pitfalls: 'ed-pitfalls',
+      knowledge: 'ed-knowledge',
       copy: 'ed-copy'
     },
     downloadName: 'ts-config.json'

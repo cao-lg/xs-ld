@@ -19,6 +19,9 @@
     .sta-verdict { margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
     .sta-verdict.ok { background: #e6f7ef; color: var(--good); }
     .sta-verdict.warn { background: #fdeee0; color: var(--mid); }
+    .kp-card { background: #f7f8fd; border: 1px solid #e7e9f3; border-left: 3px solid #5b6cff; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+    .kp-title { font-weight: 700; font-size: 13px; color: #1f2440; margin-bottom: 4px; }
+    .kp-body { font-size: 13px; color: #5a6072; line-height: 1.65; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -138,6 +141,14 @@
         <div class="block-title">⑪ ARIMA / SARIMA 预测</div>
         <button class="btn btn-primary" id="ts-arima" disabled>ARIMA 预测</button>
         <div class="ts-chart" id="ts-arima-wrap"></div>
+      </section>
+
+      <!-- ⑫ 课堂知识点注解 -->
+      <section class="block">
+        <div class="block-title">📚 课堂知识点注解</div>
+        <p class="bench-logic">时间序列分析的核心概念卡片，可在课堂讲解时展开对照。</p>
+        <button class="btn btn-primary" id="ts-knowledge">展开知识点注解</button>
+        <div id="ts-knowledge-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="ts-disclaimer"></footer>

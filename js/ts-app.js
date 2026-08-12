@@ -33,6 +33,7 @@
   function $(sel) { return document.querySelector(sel); }
   function $id(id) { return document.getElementById(id); }
   function fmt(n) { return (n == null ? '—' : Number(Math.round(n)).toLocaleString('zh-CN')); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function toast(msg, type) {
     var box = $id('toast'); if (!box) return;
     box.textContent = msg; box.className = 'toast show ' + (type || '');
@@ -47,9 +48,9 @@
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
     ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap',
-      'ts-sta-wrap', 'ts-acf-wrap', 'ts-pacf-wrap', 'ts-decomp-wrap', 'ts-arima-wrap']
+      'ts-sta-wrap', 'ts-acf-wrap', 'ts-pacf-wrap', 'ts-decomp-wrap', 'ts-arima-wrap', 'ts-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false, sta: false, acf: false, decomp: false, arima: false };
+    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false, sta: false, acf: false, decomp: false, arima: false, knowledge: false };
     state.methodAcc = null; state.recommend = null; state.forecast = null; state.arima = null;
     ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare',
       'ts-stationarity', 'ts-acf', 'ts-decomp', 'ts-arima'].forEach(function (id) { $id(id).disabled = true; });
@@ -161,6 +162,7 @@
     $id('ts-acf').addEventListener('click', buildAcf);
     $id('ts-decomp').addEventListener('click', buildDecomp);
     $id('ts-arima').addEventListener('click', buildArima);
+    $id('ts-knowledge').addEventListener('click', buildKnowledge);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({
       engine: ENGINE,
@@ -187,8 +189,8 @@
     var raw = ta.value.split(/[,\s]+/).map(parseFloat).filter(function (n) { return isFinite(n); });
     if (raw.length < 6) return toast('请至少输入 6 期有效数值', 'error');
     state.series = raw; state.hasData = true;
-    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false };
-    ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap'].forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
+    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false, knowledge: false };
+    ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap', 'ts-knowledge-wrap'].forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
     ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare'].forEach(function (id) { $id(id).disabled = true; });
     toast(TS_CONFIG.copy.tips.dataReady, 'info');
     ['ts-trend', 'ts-stationarity', 'ts-acf', 'ts-decomp', 'ts-arima'].forEach(function (id) { $id(id).disabled = false; });
@@ -507,6 +509,18 @@
     });
     state.arima = { forecast: fcA }; state.built.arima = true;
     toast('ARIMA(' + cfg.p + ',' + cfg.d + ',' + cfg.q + ') + 季节指数 vs Holt-Winters（教学简化）', 'info');
+  }
+
+  /* ---------- ⑫ 课堂知识点注解 ---------- */
+  function buildKnowledge() {
+    var list = (TS_CONFIG.knowledge || []).filter(function (k) { return k && k.title; });
+    if (!list.length) return toast('暂无课堂知识点', 'warn');
+    var html = list.map(function (k, i) {
+      return '<div class="kp-card"><div class="kp-title">' + (i + 1) + '. ' + esc(k.title) + '</div><div class="kp-body">' + esc(k.body) + '</div></div>';
+    }).join('');
+    $id('ts-knowledge-wrap').innerHTML = html;
+    state.built.knowledge = true;
+    toast('已展开 ' + list.length + ' 条课堂知识点', 'ok');
   }
 
   /* ---------- 启动 ---------- */

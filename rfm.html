@@ -21,6 +21,9 @@
       text-decoration: none; margin-bottom: 6px;
     }
     .app-bar-back:hover { opacity: 1; }
+    .kp-card { background: #f7f8fd; border: 1px solid #e7e9f3; border-left: 3px solid #5b6cff; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+    .kp-title { font-weight: 700; font-size: 13px; color: #1f2440; margin-bottom: 4px; }
+    .kp-body { font-size: 13px; color: #5a6072; line-height: 1.65; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -104,6 +107,14 @@
         <div class="block-title">⑥ 常见误区 · 词云</div>
         <button class="btn btn-primary" id="rfm-cloud" disabled>生成误区词云</button>
         <div id="rfm-cloud-wrap"></div>
+      </section>
+
+      <!-- ⑦ 课堂知识点注解 -->
+      <section class="block">
+        <div class="block-title">📚 课堂知识点注解</div>
+        <p class="bench-logic">RFM 客户分群的核心概念卡片，可在课堂讲解时展开对照。</p>
+        <button class="btn btn-primary" id="rfm-knowledge">展开知识点注解</button>
+        <div id="rfm-knowledge-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="rfm-disclaimer"></footer>

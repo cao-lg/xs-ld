@@ -18,7 +18,8 @@
       scoring: 'ed-scoring',
       segments: 'ed-segments',
       copy: 'ed-copy',
-      pitfalls: 'ed-pitfalls'
+      pitfalls: 'ed-pitfalls',
+      knowledge: 'ed-knowledge'
     },
     downloadName: 'rfm-config.json'
   });
