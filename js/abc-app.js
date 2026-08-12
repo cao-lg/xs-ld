@@ -20,11 +20,12 @@
     items: [],
     hasData: false,
     rows: null,
-    built: { sorted: false, pareto: false, summary: false, cloud: false }
+    built: { sorted: false, pareto: false, summary: false, cloud: false, knowledge: false }
   };
 
   function $id(id) { return document.getElementById(id); }
   function fmt(n) { return (n == null ? '—' : Number(Math.round(n)).toLocaleString('zh-CN')); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function toast(msg, type) {
     var box = $id('toast'); if (!box) return;
     box.textContent = msg; box.className = 'toast show ' + (type || '');
@@ -36,9 +37,9 @@
   function freshChart(id, domId) { disposeChart(id); return registerChart(id, echarts.init($id(domId))); }
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
-    ['abc-table-wrap', 'abc-pareto-wrap', 'abc-summary-wrap', 'abc-cloud-wrap']
+    ['abc-table-wrap', 'abc-pareto-wrap', 'abc-summary-wrap', 'abc-cloud-wrap', 'abc-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { sorted: false, pareto: false, summary: false, cloud: false };
+    state.built = { sorted: false, pareto: false, summary: false, cloud: false, knowledge: false };
     state.rows = null;
     ['abc-sort', 'abc-pareto', 'abc-summary', 'abc-cloud'].forEach(function (id) { $id(id).disabled = true; });
   }
@@ -72,6 +73,7 @@
     $id('abc-pareto').addEventListener('click', buildPareto);
     $id('abc-summary').addEventListener('click', buildSummary);
     $id('abc-cloud').addEventListener('click', buildCloud);
+    $id('abc-knowledge').addEventListener('click', buildKnowledge);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({
       engine: ENGINE,
@@ -101,8 +103,8 @@
     }
     if (list.length < 2) return toast('请至少输入 2 个有效商品（商品名,销售额）', 'error');
     state.items = list; state.hasData = true;
-    state.built = { sorted: false, pareto: false, summary: false, cloud: false };
-    ['abc-table-wrap', 'abc-pareto-wrap', 'abc-summary-wrap', 'abc-cloud-wrap'].forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
+    state.built = { sorted: false, pareto: false, summary: false, cloud: false, knowledge: false };
+    ['abc-table-wrap', 'abc-pareto-wrap', 'abc-summary-wrap', 'abc-cloud-wrap', 'abc-knowledge-wrap'].forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
     ['abc-sort', 'abc-pareto', 'abc-summary', 'abc-cloud'].forEach(function (id) { $id(id).disabled = true; });
     toast(ABC_CONFIG.copy.tips.dataReady + '（共 ' + list.length + ' 个）', 'info');
     $id('abc-sort').disabled = false;
@@ -201,6 +203,18 @@
     });
     state.built.cloud = true;
     toast('常见误区已生成', 'info');
+  }
+
+  /* ---------- ⑥ 课堂知识点注解 ---------- */
+  function buildKnowledge() {
+    var list = (ABC_CONFIG.knowledge || []).filter(function (k) { return k && k.title; });
+    if (!list.length) return toast('暂无课堂知识点', 'warn');
+    var html = list.map(function (k, i) {
+      return '<div class="kp-card"><div class="kp-title">' + (i + 1) + '. ' + esc(k.title) + '</div><div class="kp-body">' + esc(k.body) + '</div></div>';
+    }).join('');
+    $id('abc-knowledge-wrap').innerHTML = html;
+    state.built.knowledge = true;
+    toast('已展开 ' + list.length + ' 条课堂知识点', 'ok');
   }
 
   /* ---------- 启动 ---------- */

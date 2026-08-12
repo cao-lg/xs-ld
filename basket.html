@@ -19,6 +19,9 @@
     .basket-table .rk-neg td:first-child { color: #e5484d; }
     .app-bar-back { display: inline-block; font-size: 13px; color: #fff; opacity: .92; text-decoration: none; margin-bottom: 6px; }
     .app-bar-back:hover { opacity: 1; }
+    .kp-card { background: #f7f8fd; border: 1px solid #e7e9f3; border-left: 3px solid #5b6cff; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+    .kp-title { font-weight: 700; font-size: 13px; color: #1f2440; margin-bottom: 4px; }
+    .kp-body { font-size: 13px; color: #5a6072; line-height: 1.65; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -103,6 +106,14 @@
         <div class="block-title">⑥ 常见误区 · 词云</div>
         <button class="btn btn-primary" id="basket-cloud" disabled>生成误区词云</button>
         <div id="basket-cloud-wrap"></div>
+      </section>
+
+      <!-- ⑦ 课堂知识点注解 -->
+      <section class="block">
+        <div class="block-title">⑦ 课堂知识点注解</div>
+        <p class="bench-logic">支持度 / 置信度 / 提升度、尿布啤酒案例、关联≠因果——课堂讲解时可一键展开对照。</p>
+        <button class="btn btn-primary" id="basket-knowledge">展开课堂知识点</button>
+        <div id="basket-knowledge-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="basket-disclaimer"></footer>

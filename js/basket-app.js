@@ -19,12 +19,13 @@
   var state = {
     baskets: [], hasData: false,
     freq: null, rules: null,
-    built: { freq: false, rules: false, scatter: false, list: false, cloud: false }
+    built: { freq: false, rules: false, scatter: false, list: false, cloud: false, knowledge: false }
   };
 
   function $sel(s) { return document.querySelector(s); }
   function $id(id) { return document.getElementById(id); }
   function pct(x) { return (x * 100).toFixed(1) + '%'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function toast(msg, type) {
     var box = $id('toast'); if (!box) return;
     box.textContent = msg; box.className = 'toast show ' + (type || '');
@@ -36,9 +37,9 @@
   function freshChart(id, domId) { disposeChart(id); return registerChart(id, echarts.init($id(domId))); }
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
-    ['basket-freq-wrap', 'basket-pair-wrap', 'basket-scatter-wrap', 'basket-list-wrap', 'basket-cloud-wrap']
+    ['basket-freq-wrap', 'basket-pair-wrap', 'basket-scatter-wrap', 'basket-list-wrap', 'basket-cloud-wrap', 'basket-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { freq: false, rules: false, scatter: false, list: false, cloud: false };
+    state.built = { freq: false, rules: false, scatter: false, list: false, cloud: false, knowledge: false };
     state.baskets = []; state.rules = null; state.freq = null; state.hasData = false;
     ['basket-freq', 'basket-rules', 'basket-scatter', 'basket-list', 'basket-cloud']
       .forEach(function (id) { $id(id).disabled = true; });
@@ -69,8 +70,8 @@
     }
     if (baskets.length < 2) return toast('请至少输入 2 笔有效交易（每行逗号分隔的商品）', 'error');
     state.baskets = baskets; state.hasData = true;
-    state.built = { freq: false, rules: false, scatter: false, list: false, cloud: false };
-    ['basket-freq-wrap', 'basket-pair-wrap', 'basket-scatter-wrap', 'basket-list-wrap', 'basket-cloud-wrap']
+    state.built = { freq: false, rules: false, scatter: false, list: false, cloud: false, knowledge: false };
+    ['basket-freq-wrap', 'basket-pair-wrap', 'basket-scatter-wrap', 'basket-list-wrap', 'basket-cloud-wrap', 'basket-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
     ['basket-freq', 'basket-rules', 'basket-scatter', 'basket-list', 'basket-cloud']
       .forEach(function (id) { $id(id).disabled = true; });
@@ -218,6 +219,18 @@
     toast('常见误区已生成', 'info');
   }
 
+  /* ---------- ⑦ 课堂知识点注解 ---------- */
+  function buildKnowledge() {
+    var list = (BASKET_CONFIG.knowledge || []).filter(function (k) { return k && k.title; });
+    if (!list.length) return toast('暂无课堂知识点', 'warn');
+    var html = list.map(function (k, i) {
+      return '<div class="kp-card"><div class="kp-title">' + (i + 1) + '. ' + esc(k.title) + '</div><div class="kp-body">' + esc(k.body) + '</div></div>';
+    }).join('');
+    $id('basket-knowledge-wrap').innerHTML = html;
+    state.built.knowledge = true;
+    toast('已展开 ' + list.length + ' 条课堂知识点', 'ok');
+  }
+
   /* ---------- UI ---------- */
   function setWelcome() { var w = $id('basket-welcome'); if (w) w.textContent = BASKET_CONFIG.copy.welcome; }
   function setDisclaimer() { var d = $id('basket-disclaimer'); if (d) d.textContent = BASKET_CONFIG.copy.disclaimer; }
@@ -230,6 +243,7 @@
     $id('basket-scatter').addEventListener('click', buildScatter);
     $id('basket-list').addEventListener('click', buildList);
     $id('basket-cloud').addEventListener('click', buildCloud);
+    $id('basket-knowledge').addEventListener('click', buildKnowledge);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({
       engine: ENGINE,

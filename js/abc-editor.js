@@ -17,7 +17,8 @@
       items: 'ed-items',
       thresholds: 'ed-thresholds',
       copy: 'ed-copy',
-      pitfalls: 'ed-pitfalls'
+      pitfalls: 'ed-pitfalls',
+      knowledge: 'ed-knowledge'
     },
     downloadName: 'abc-config.json'
   });
