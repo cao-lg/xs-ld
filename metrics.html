@@ -24,6 +24,16 @@
     .mk-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 11px; }
     .mk-bench { color: var(--ink-soft); }
     .mk-delta.up { color: #1faa6b; } .mk-delta.down { color: #e5484d; }
+    .mk-note { font-size: 11px; color: var(--ink-soft); margin: 8px 2px 0; line-height: 1.5; }
+    /* GMV 拆解 */
+    .gmv-formula { font-size: 14px; font-weight: 700; color: var(--ink); margin: 6px 0 10px; text-align: center; letter-spacing: .5px; }
+    .gmv-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .gmv-card { border: 1px solid #e7e9f3; border-radius: 10px; padding: 8px 10px; background: #fff; }
+    .gmv-c-k { font-size: 11px; color: var(--ink-soft); }
+    .gmv-c-v { font-size: 16px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+    .gmv-card-em { background: linear-gradient(135deg,#5b6cff,#7d5bd6); border-color: transparent; }
+    .gmv-card-em .gmv-c-k { color: rgba(255,255,255,.85); }
+    .gmv-card-em .gmv-c-v { color: #fff; }
     /* 比率表 */
     .mk-table { margin-top: 10px; border: 1px solid #e7e9f3; border-radius: 10px; overflow: hidden; }
     .mk-table table { border-collapse: collapse; width: 100%; font-size: 12px; }
@@ -115,6 +125,20 @@
         <div class="block-title">⑥ 常见误区 · 词云</div>
         <button class="btn btn-primary" id="metrics-cloud" disabled>生成误区词云</button>
         <div id="metrics-cloud-wrap"></div>
+      </section>
+
+      <!-- ⑦ 指标趋势与同环比 -->
+      <section class="block">
+        <div class="block-title">⑦ 指标趋势与同环比（12 个月）</div>
+        <button class="btn btn-primary" id="metrics-trend" disabled>绘制趋势 · 同环比</button>
+        <div id="metrics-trend-wrap"></div>
+      </section>
+
+      <!-- ⑧ GMV 拆解 -->
+      <section class="block">
+        <div class="block-title">⑧ GMV 拆解（访客 × 支付转化率 × 客单价）</div>
+        <button class="btn btn-primary" id="metrics-gmv" disabled>拆解 GMV</button>
+        <div id="metrics-gmv-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="metrics-disclaimer"></footer>

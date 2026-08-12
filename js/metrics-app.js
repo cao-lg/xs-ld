@@ -17,8 +17,8 @@
   var METRICS_CONFIG = loadInitialConfig();
 
   var state = {
-    indicators: [], funnel: [], hasData: false,
-    built: { overview: false, funnel: false, ratio: false, radar: false, cloud: false }
+    indicators: [], funnel: [], trends: [], months: [], hasData: false,
+    built: { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false }
   };
 
   function $id(id) { return document.getElementById(id); }
@@ -42,11 +42,11 @@
   function freshChart(id, domId) { disposeChart(id); return registerChart(id, echarts.init($id(domId))); }
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
-    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap']
+    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false };
-    state.indicators = []; state.funnel = []; state.hasData = false;
-    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud']
+    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false };
+    state.indicators = []; state.funnel = []; state.trends = []; state.months = []; state.hasData = false;
+    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv']
       .forEach(function (id) { $id(id).disabled = true; });
   }
 
@@ -74,14 +74,18 @@
     if (list.length < 2) return toast('请至少输入 2 项有效指标（名称,分类,当前值,单位,基准）', 'error');
     state.indicators = list;
     state.funnel = (METRICS_CONFIG.funnel || []).map(function (f) { return { step: f.step, value: f.value }; });
+    state.trends = (METRICS_CONFIG.trends || []).map(function (t) {
+      return { name: t.name, values: (t.values || '').split(/[,，\s]+/).map(parseFloat).filter(function (v) { return isFinite(v); }) };
+    });
+    state.months = (METRICS_CONFIG.months || '').split(/[,，\s]+/).map(function (x) { return x.trim(); }).filter(Boolean);
     state.hasData = true;
-    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false };
-    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap']
+    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false };
+    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud']
+    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv']
       .forEach(function (id) { $id(id).disabled = true; });
     toast(METRICS_CONFIG.copy.tips.dataReady + '（共 ' + list.length + ' 项）', 'info');
-    $id('metrics-overview').disabled = false; $id('metrics-funnel').disabled = false;
+    $id('metrics-overview').disabled = false; $id('metrics-funnel').disabled = false; $id('metrics-trend').disabled = false;
   }
 
   /* ---------- ② 指标概览 ---------- */
@@ -188,6 +192,112 @@
     toast(METRICS_CONFIG.copy.tips.radarDone, 'info');
   }
 
+  /* ---------- ⑦ 指标趋势与同环比 ---------- */
+  function trendByName(n) { for (var i = 0; i < state.trends.length; i++) if (state.trends[i].name === n) return state.trends[i].values; return null; }
+  function isRateName(n) { return n.indexOf('率') >= 0; }
+  function fmtTrendVal(name, v) {
+    if (isRateName(name)) return (v * 100).toFixed(2) + '%';
+    if (name === 'GMV(派生)') return '¥' + Math.round(v).toLocaleString('zh-CN');
+    if (name === '访客数 UV') return Math.round(v).toLocaleString('zh-CN') + ' 人';
+    if (name === '客单价') return '¥' + Math.round(v).toLocaleString('zh-CN');
+    if (Math.abs(v) >= 1000 || v === 0) return Math.round(v).toLocaleString('zh-CN');
+    return (Math.round(v * 100) / 100).toLocaleString('zh-CN');
+  }
+  function buildTrend() {
+    if (!state.trends || !state.trends.length) return toast('请先应用指标数据（含趋势）', 'error');
+    var months = state.months.length ? state.months : state.trends[0].values.map(function (_, i) { return 'M' + (i + 1); });
+    var uv = trendByName('访客数 UV'), cvr = trendByName('支付转化率'), aov = trendByName('客单价');
+    var gmv = (uv && cvr && aov && uv.length === cvr.length && cvr.length === aov.length)
+      ? uv.map(function (v, i) { return +(v * cvr[i] * aov[i]).toFixed(0); }) : null;
+    var series = state.trends.slice();
+    if (gmv) series = series.concat([{ name: 'GMV(派生)', values: gmv }]);
+    var palette = ['#5b6cff', '#1faa6b', '#e0a300', '#2bb3c0', '#e5484d', '#7d5bd6', '#3a7bd5', '#1faa6b'];
+    var lineSeries = series.map(function (s, idx) {
+      var base = s.values[0] || 1;
+      return {
+        name: s.name, type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+        lineStyle: { width: s.name === 'GMV(派生)' ? 3 : 1.6 },
+        itemStyle: { color: palette[idx % palette.length] },
+        data: s.values.map(function (v) { return +((v / base) * 100).toFixed(1); })
+      };
+    });
+    var wrap = $id('metrics-trend-wrap');
+    wrap.innerHTML = '<div class="metrics-chart" id="metrics-trend-chart"></div>';
+    var chart = freshChart('metrics-trend', 'metrics-trend-chart');
+    chart.setOption({
+      tooltip: { trigger: 'axis', formatter: function (ps) {
+        var lines = [ps[0].axisValue];
+        ps.forEach(function (p) {
+          var raw = series[p.seriesIndex].values[p.dataIndex];
+          lines.push(p.marker + p.seriesName + '：' + fmtTrendVal(series[p.seriesIndex].name, raw) + '（指数 ' + p.data + '）');
+        });
+        return lines.join('<br/>');
+      } },
+      legend: { type: 'scroll', top: 0, textStyle: { fontSize: 11 } },
+      grid: { left: 44, right: 16, top: 40, bottom: 28 },
+      xAxis: { type: 'category', data: months, axisLabel: { fontSize: 10, interval: 0, rotate: months.length > 8 ? 38 : 0 } },
+      yAxis: { type: 'value', name: '指数(首月=100)', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10 } },
+      series: lineSeries
+    });
+    var rows = series.map(function (s) {
+      var v = s.values, n = v.length;
+      var last = v[n - 1], prev = v[n - 2], first = v[0];
+      var hb = prev ? last / prev - 1 : 0;
+      var cum = first ? last / first - 1 : 0;
+      var lowBetter = (s.name === '退换货率');
+      var rate = isRateName(s.name);
+      var f = function (x) { return rate ? (x * 100).toFixed(1) + '%' : Math.round(x).toLocaleString('zh-CN'); };
+      var hbCls = ((hb >= 0) === !lowBetter) ? 'rk-ok' : 'rk-no';
+      var cumCls = ((cum >= 0) === !lowBetter) ? 'rk-ok' : 'rk-no';
+      var pp = function (x) { return (Math.abs(x) * 100).toFixed(1) + 'pp'; };
+      var pc = function (x) { return (x * 100).toFixed(1) + '%'; };
+      return '<tr><td>' + s.name + '</td><td>' + f(last) + '</td>' +
+        '<td class="' + hbCls + '">' + (hb >= 0 ? '▲' : '▼') + ' ' + (rate ? pp(hb) : pc(hb)) + '</td>' +
+        '<td class="' + cumCls + '">' + (cum >= 0 ? '▲' : '▼') + ' ' + (rate ? pp(cum) : pc(cum)) + '</td></tr>';
+    }).join('');
+    wrap.insertAdjacentHTML('beforeend',
+      '<div class="mk-table"><table><thead><tr><th>指标 / ' + (months[months.length - 1] || '最新') + '</th><th>最新值</th><th>环比</th><th>累计增长</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<p class="mk-note">指数=各月值÷首月×100，便于跨量纲比较走势；「率」类环比/累计以百分点(pp)计；退换货率走低为优。</p></div>');
+    state.built.trend = true;
+    toast(METRICS_CONFIG.copy.tips.trendDone, 'ok');
+    $id('metrics-gmv').disabled = false;
+  }
+
+  /* ---------- ⑧ GMV 拆解 ---------- */
+  function buildGmv() {
+    if (!state.trends || !state.trends.length) return toast('请先应用指标数据（含趋势）', 'error');
+    var uv = trendByName('访客数 UV'), cvr = trendByName('支付转化率'), aov = trendByName('客单价');
+    if (!uv || !cvr || !aov) return toast('趋势中缺少 访客 / 支付转化率 / 客单价，无法拆解 GMV', 'error');
+    var n = uv.length, last = n - 1;
+    var g0 = uv[0] * cvr[0] * aov[0], g12 = uv[last] * cvr[last] * aov[last];
+    var gUV = uv[last] / uv[0] - 1, gCVR = cvr[last] / cvr[0] - 1, gAOV = aov[last] / aov[0] - 1, gGMV = g12 / g0 - 1;
+    var wrap = $id('metrics-gmv-wrap');
+    wrap.innerHTML = '<div class="gmv-formula">GMV = 访客 × 支付转化率 × 客单价</div>' +
+      '<div class="gmv-cards">' +
+        '<div class="gmv-card"><div class="gmv-c-k">12月 访客</div><div class="gmv-c-v">' + Math.round(uv[last]).toLocaleString('zh-CN') + ' 人</div></div>' +
+        '<div class="gmv-card"><div class="gmv-c-k">12月 支付转化率</div><div class="gmv-c-v">' + (cvr[last] * 100).toFixed(2) + '%</div></div>' +
+        '<div class="gmv-card"><div class="gmv-c-k">12月 客单价</div><div class="gmv-c-v">¥' + Math.round(aov[last]).toLocaleString('zh-CN') + '</div></div>' +
+        '<div class="gmv-card gmv-card-em"><div class="gmv-c-k">12月 GMV</div><div class="gmv-c-v">¥' + Math.round(g12).toLocaleString('zh-CN') + '</div></div>' +
+      '</div>' +
+      '<div class="metrics-chart" id="metrics-gmv-chart"></div>' +
+      '<p class="mk-note">GMV 累计增长 ' + (gGMV * 100).toFixed(1) + '%，近似等于 访客(' + (gUV * 100).toFixed(1) + '%) + 支付转化率(' + (gCVR * 100).toFixed(1) + '%) + 客单价(' + (gAOV * 100).toFixed(1) + '%) 三者累计增长之和（对数可加性，交互项极小）。</p>';
+    var chart = freshChart('metrics-gmv', 'metrics-gmv-chart');
+    chart.setOption({
+      tooltip: { trigger: 'axis', formatter: function (ps) { var p = ps[0]; return p.name + '：' + p.value.toFixed(1) + '%'; } },
+      grid: { left: 64, right: 20, top: 24, bottom: 28 },
+      xAxis: { type: 'category', data: ['访客 UV', '支付转化率', '客单价', 'GMV(累计)'], axisLabel: { fontSize: 11 } },
+      yAxis: { type: 'value', name: '累计增长%', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10, formatter: '{value}%' } },
+      series: [{ type: 'bar', barWidth: '52%', data: [
+        { value: +(gUV * 100).toFixed(1), itemStyle: { color: '#5b6cff' } },
+        { value: +(gCVR * 100).toFixed(1), itemStyle: { color: '#1faa6b' } },
+        { value: +(gAOV * 100).toFixed(1), itemStyle: { color: '#e0a300' } },
+        { value: +(gGMV * 100).toFixed(1), itemStyle: { color: '#e5484d' } }
+      ], label: { show: true, position: 'top', formatter: '{c}%', fontSize: 11 } }]
+    });
+    state.built.gmv = true;
+    toast(METRICS_CONFIG.copy.tips.gmvDone, 'ok');
+  }
+
   /* ---------- ⑥ 误区词云 ---------- */
   function buildCloud() {
     if (!METRICS_CONFIG.pitfalls || !METRICS_CONFIG.pitfalls.length) return toast('无误区词云数据', 'warn');
@@ -217,6 +327,8 @@
     $id('metrics-funnel').addEventListener('click', buildFunnel);
     $id('metrics-ratio').addEventListener('click', buildRatio);
     $id('metrics-radar').addEventListener('click', buildRadar);
+    $id('metrics-trend').addEventListener('click', buildTrend);
+    $id('metrics-gmv').addEventListener('click', buildGmv);
     $id('metrics-cloud').addEventListener('click', buildCloud);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({

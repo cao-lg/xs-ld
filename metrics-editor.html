@@ -15,8 +15,9 @@
     </div>
     <nav class="ed-nav">
       <a href="#sec-m">① 指标与漏斗</a>
-      <a href="#sec-pit">② 误区词云</a>
-      <a href="#sec-copy">③ 文案</a>
+      <a href="#sec-t">② 趋势数据</a>
+      <a href="#sec-pit">③ 误区词云</a>
+      <a href="#sec-copy">④ 文案</a>
     </nav>
   </header>
 
@@ -31,6 +32,13 @@
       <p class="ed-sec-hint">漏斗：访客 → 加购 → 下单 → 支付各环节人数/笔数。指标：名称 / 分类 / 当前值 / 单位 / 行业基准。可增删。</p>
       <div id="ed-funnel"></div>
       <div id="ed-indicators"></div>
+    </section>
+
+    <section id="sec-t" class="ed-sec">
+      <h2>② 12 个月趋势（同环比 / GMV 拆解数据源）</h2>
+      <p class="ed-sec-hint">月份标签（逗号分隔 12 个）。趋势：每个指标一行，名称须与「运营指标」一致，数值为逗号分隔的 12 个月度值（顺序对应月份）。GMV 由 访客×支付转化率×客单价 自动派生。</p>
+      <div id="ed-months"></div>
+      <div id="ed-trends"></div>
     </section>
 
     <section id="sec-pit" class="ed-sec">

@@ -15,6 +15,8 @@
     mounts: {
       funnel: 'ed-funnel',
       indicators: 'ed-indicators',
+      months: 'ed-months',
+      trends: 'ed-trends',
       copy: 'ed-copy',
       pitfalls: 'ed-pitfalls'
     },

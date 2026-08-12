@@ -14,7 +14,7 @@
 | ③ RFM 客户分群 · 小数 | `rfm.html` | `rfm-editor.html` | `rfm-config.json` | R/F/M 五分位打分 → 8 类客户群（2³ 全组合）→ 散点 / 规模 / 价值对比 |
 | ④ ABC / 帕累托分析 · 小数 | `abc.html` | `abc-editor.html` | `abc-config.json` | 按销售额降序 → 累计占比 → A(≤80%)/B(≤95%)/C 分类 → 帕累托图 + 汇总 |
 | ⑤ 购物篮关联分析 · 小数 | `basket.html` | `basket-editor.html` | `basket-config.json` | 支持度 / 置信度 / 提升度 → 强关联规则发现（散点 + 列表） |
-| ⑥ 电商各类指标 · 小数 | `metrics.html` | `metrics-editor.html` | `metrics-config.json` | 流量/转化/客单价/留存/营销 概览 → 转化漏斗 → 关键比率 → 雷达对标 |
+| ⑥ 电商各类指标 · 小数 | `metrics.html` | `metrics-editor.html` | `metrics-config.json` | 流量/转化/客单价/留存/营销 概览 → 转化漏斗 → 关键比率 → 雷达对标 → 12月趋势与同环比 → GMV 拆解 |
 
 ---
 
@@ -306,8 +306,10 @@ wrangler pages deploy . --project-name=xs-ld
 | ④ 关键比率 | 加购率 / 支付转化率 / 客单价 / 复购率 | 由漏斗与指标计算 |
 | ⑤ 雷达对标 | 当前值 vs 行业基准（按各自量纲归一） | ECharts radar |
 | ⑥ 误区词云 | 指标解读常见误区可视化 | ECharts wordcloud |
+| ⑦ 指标趋势与同环比 | 各指标 12 个月走势（首月=100 归一化多线）+ 最新值 / 环比 / 累计增长表 | ECharts line + table |
+| ⑧ GMV 拆解 | GMV = 访客 × 支付转化率 × 客单价，展示 12 月三因子与 GMV 累计增长（对数可加性） | ECharts bar + 公式卡 |
 
-> **教学亮点**：直观对比「把 PV 当 UV」「转化率分母用错」「客单价与笔单价混淆」「复购率口径不一」「只看单点不看趋势」「GMV 含未付/退款」「优惠券拉高客单价假象」「漏斗各级分母混乱」等误区。
+> **教学亮点**：直观对比「把 PV 当 UV」「转化率分母用错」「客单价与笔单价混淆」「复购率口径不一」「只看单点不看趋势」「GMV 含未付/退款」「优惠券拉高客单价假象」「漏斗各级分母混乱」「同环比基数选错」「用环比代替同比误导季节」「增长率忽略交互项」等误区。趋势与同环比强调「率」类指标以百分点(pp)计、退换货率走低为优；GMV 拆解点出累计增长率（对数）≈ 访客 + 支付转化率 + 客单价 三者累计增长率之和。
 
 ---
 
@@ -317,7 +319,7 @@ wrangler pages deploy . --project-name=xs-ld
 
 ### 方式 A：一键更新（推荐，适合 Cloudflare Pages）
 
-1. 修改对应模板文件（漏斗 `benchmark.json` / 时间序列 `ts-config.json` / RFM `rfm-config.json` / ABC `abc-config.json`）。
+1. 修改对应模板文件（漏斗 `benchmark.json` / 时间序列 `ts-config.json` / RFM `rfm-config.json` / ABC `abc-config.json` / 电商指标 `metrics-config.json`）。
 2. 提交到仓库根目录（或覆盖到 Pages 根目录）。
 3. 打开网页，展开「🛠️ 配置数据管理」，点击 **🔄 一键更新**（默认读取 `./benchmark.json` 或 `./ts-config.json`）。
 4. 数据立即生效并持久化到浏览器 `localStorage`，刷新后仍保留。
@@ -342,7 +344,7 @@ wrangler pages deploy . --project-name=xs-ld
 4. **↺ 默认**：一键载入内置默认（未保存不会覆盖本地）。
 5. 底部「👁️ 预览 / 校验 JSON」实时显示当前配置，格式异常会标红。
 
-> 编辑器与主程序共用同一存储键（漏斗 `xiaoshu.config.v1` / 时间序列 `ts.config.v1` / RFM `rfm.config.v1` / ABC `abc.config.v1`），「在编辑器保存」等同于「在主程序导入同一份配置」，二者随时互通。
+> 编辑器与主程序共用同一存储键（漏斗 `xiaoshu.config.v1` / 时间序列 `ts.config.v1` / RFM `rfm.config.v1` / ABC `abc.config.v1` / 电商指标 `metrics.config.v1`），「在编辑器保存」等同于「在主程序导入同一份配置」，二者随时互通。
 
 ### 方式 D：恢复内置默认
 
@@ -408,4 +410,4 @@ wrangler pages deploy . --project-name=xs-ld
 
 ---
 
-*版本：4.0（课程工具系列 · 6 工具）| 更新：2026-08-12 | 基座：kit/ 通用配置引擎 + 在线编辑器 + 数据管理面板*
+*版本：4.1（课程工具系列 · 6 工具）| 更新：2026-08-12 | 基座：kit/ 通用配置引擎 + 在线编辑器 + 数据管理面板*
