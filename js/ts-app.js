@@ -41,6 +41,17 @@
   var charts = {};
   function registerChart(id, chart) { charts[id] = chart; return chart; }
   function disposeChart(id) { if (charts[id]) { charts[id].dispose(); delete charts[id]; } }
+  /* 重新初始化某容器：先销毁旧实例，避免对已挂载 canvas 的 DOM 重复 init */
+  function freshChart(id, domId) { disposeChart(id); return registerChart(id, echarts.init($id(domId))); }
+  /* 切换案例 / 重新载入配置时：清空所有图表、重置分析状态与后续步骤按钮 */
+  function resetAnalysis() {
+    Object.keys(charts).forEach(disposeChart);
+    ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap']
+      .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
+    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false };
+    state.methodAcc = null; state.recommend = null; state.forecast = null;
+    ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare'].forEach(function (id) { $id(id).disabled = true; });
+  }
 
   var ACC_COLOR = { good: '#1f9e6b', mid: '#d99a00', low: '#e5484d' };
   function mapeLevel(m, bench) { if (m <= bench.good) return 'good'; if (m <= bench.mid) return 'mid'; return 'low'; }
@@ -137,7 +148,7 @@
 
   function initUI() {
     setWelcome(); setDisclaimer(); renderCaseSelect();
-    $id('ts-case').addEventListener('change', function (e) { state.caseName = e.target.value; loadCase(); });
+    $id('ts-case').addEventListener('change', function (e) { state.caseName = e.target.value; resetAnalysis(); loadCase(); });
     $id('ts-apply').addEventListener('click', applyInput);
     $id('ts-trend').addEventListener('click', buildTrend);
     $id('ts-accuracy').addEventListener('click', buildAccuracy);
@@ -148,7 +159,7 @@
     CourseKit.mountDataManager({
       engine: ENGINE,
       getConfig: function () { return TS_CONFIG; },
-      onApply: function (cfg) { TS_CONFIG = cfg; state.caseName = cfg.cases[0]; renderCaseSelect(); setWelcome(); setDisclaimer(); loadCase(); },
+      onApply: function (cfg) { TS_CONFIG = cfg; state.caseName = cfg.cases[0]; renderCaseSelect(); setWelcome(); setDisclaimer(); resetAnalysis(); loadCase(); },
       defaultUrl: './ts-config.json', editorUrl: 'ts-editor.html', downloadName: 'ts-config.json',
       ids: { srcBadge: 'src-badge', btnExport: 'btn-export', btnImport: 'btn-import', fileImport: 'file-import', btnReset: 'btn-reset-config', updateUrl: 'update-url', btnFetch: 'btn-fetch-update', note: 'dm-note' }
     });
@@ -180,7 +191,7 @@
     if (!state.hasData) return toast('请先输入或载入序列', 'error');
     var s = state.series, k = TS_CONFIG.methods.movingAverage.recommend;
     var ma = movingAverage(s, k);
-    var chart = registerChart('ts-trend', echarts.init($id('ts-trend-wrap')));
+    var chart = freshChart('ts-trend', 'ts-trend-wrap');
     chart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['原始序列', '移动平均 MA(' + k + ')'], top: 0 },
@@ -214,7 +225,7 @@
     var data = names.map(function (n) {
       return { name: n, value: Math.round(acc[n] * 10) / 10, itemStyle: { color: ACC_COLOR[mapeLevel(acc[n], bench)] } };
     });
-    var chart = registerChart('ts-acc', echarts.init($id('ts-acc-wrap')));
+    var chart = freshChart('ts-acc', 'ts-acc-wrap');
     chart.setOption({
       tooltip: { trigger: 'axis', formatter: function (p) { return p[0].name + '<br/>MAPE: ' + p[0].value + '%'; } },
       grid: { left: 50, right: 16, top: 20, bottom: 50 },
@@ -235,7 +246,7 @@
     var fitted = fittedOf(s, best);
     var resid = s.map(function (v, i) { return fitted[i] == null ? null : Math.round((v - fitted[i]) * 100) / 100; });
     var mask = anomalyMask(resid, 2);
-    var chart = registerChart('ts-res', echarts.init($id('ts-res-wrap')));
+    var chart = freshChart('ts-res', 'ts-res-wrap');
     chart.setOption({
       tooltip: { trigger: 'axis' },
       grid: { left: 50, right: 16, top: 20, bottom: 30 },
@@ -247,7 +258,7 @@
       }]
     });
     // 词云
-    var cloud = registerChart('ts-cloud', echarts.init($id('ts-cloud-wrap')));
+    var cloud = freshChart('ts-cloud', 'ts-cloud-wrap');
     cloud.setOption({
       tooltip: { show: false },
       series: [{
@@ -278,7 +289,7 @@
     var pred = new Array(n - 1).fill(null).concat([s[n - 1]]).concat(fc);
     var lo = new Array(n - 1).fill(null).concat([s[n - 1]]).concat(lower);
     var up = new Array(n - 1).fill(null).concat([s[n - 1]]).concat(upper);
-    var chart = registerChart('ts-fc', echarts.init($id('ts-fc-wrap')));
+    var chart = freshChart('ts-fc', 'ts-fc-wrap');
     chart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['实际', '预测', '95% 区间'], top: 0 },
@@ -310,7 +321,7 @@
       return { name: name, type: 'line', data: new Array(n - 1).fill(null).concat([s[n - 1]]).concat(arr), showSymbol: false, lineStyle: { width: width, opacity: name === best ? 1 : 0.5 }, itemStyle: { color: color } };
     }
     var xall = []; for (var i = 1; i <= n + h; i++) xall.push(i);
-    var chart = registerChart('ts-cmp', echarts.init($id('ts-cmp-wrap')));
+    var chart = freshChart('ts-cmp', 'ts-cmp-wrap');
     chart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['实际', '移动平均', '指数平滑', 'Holt-Winters'], top: 0 },
