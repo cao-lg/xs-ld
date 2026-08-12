@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b6cff" />
+  <title>时间序列分析 · 小数</title>
+  <meta name="description" content="电商数据分析教学工具：移动平均、指数平滑、Holt-Winters 季节分解、精度对标、残差诊断与多步预测。纯前端，无需后端。" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .ts-chart { width: 100%; height: 320px; margin-top: 10px; }
+    #ts-cloud-wrap { width: 100%; height: 240px; margin-top: 10px; }
+    .ts-input { width: 100%; min-height: 64px; border: 1px solid #dde0ea; border-radius: 10px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+    #ts-case { width: 100%; padding: 9px 10px; border: 1px solid #dde0ea; border-radius: 10px; font-size: 14px; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="app-bar">
+      <div class="app-bar-title">📈 时间序列分析 · 小数</div>
+      <div class="app-bar-sub">电商运营教学验证工具 · 教师主导</div>
+    </header>
+
+    <main class="screen">
+      <section class="welcome" id="ts-welcome"></section>
+
+      <!-- 配置数据管理（导出 / 导入 / 一键更新 / 恢复默认 / 在线编辑） -->
+      <details class="data-mgr" id="data-mgr">
+        <summary class="data-mgr-sum">
+          <span>🛠️ 配置数据管理</span>
+          <span class="src-badge" id="src-badge">内置默认</span>
+        </summary>
+        <div class="data-mgr-body">
+          <p class="dm-hint">案例、方法参数、精度阈值、误区词云等均可编辑。修改后导出 JSON，下次可一键更新，保持数据最新。</p>
+          <div class="dm-actions">
+            <button class="btn btn-sm" id="btn-export">⬇️ 导出当前JSON</button>
+            <button class="btn btn-sm" id="btn-import">⬆️ 导入JSON文件</button>
+            <input type="file" id="file-import" accept=".json,application/json" hidden />
+            <button class="btn btn-sm btn-warn" id="btn-reset-config">↺ 恢复内置默认</button>
+            <a class="btn btn-sm btn-primary" id="btn-editor" href="ts-editor.html" style="text-decoration:none;display:inline-flex;align-items:center;">🖊️ 在线编辑</a>
+          </div>
+          <div class="dm-update">
+            <label class="dm-url-label" for="update-url">一键更新地址</label>
+            <div class="dm-url-row">
+              <input type="text" id="update-url" class="dm-url" placeholder="./ts-config.json" value="./ts-config.json" inputmode="url" />
+              <button class="btn btn-sm btn-primary" id="btn-fetch-update">🔄 一键更新</button>
+            </div>
+          </div>
+          <p class="dm-note" id="dm-note"></p>
+        </div>
+      </details>
+
+      <!-- ① 选择案例 -->
+      <section class="block">
+        <div class="block-title">① 选择案例 / 序列</div>
+        <select id="ts-case"></select>
+        <p class="bench-logic" id="ts-case-hint">选择预设案例，或在下方粘贴你自己的观测序列。</p>
+      </section>
+
+      <!-- ② 输入序列 -->
+      <section class="block">
+        <div class="block-title">② 输入时间序列</div>
+        <textarea class="ts-input" id="ts-input" placeholder="用逗号或空格分隔的一串数字，如 120,135,128,..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="ts-apply">应用序列</button>
+        </div>
+      </section>
+
+      <!-- ③ 趋势提取 -->
+      <section class="block">
+        <div class="block-title">③ 趋势提取（移动平均）</div>
+        <button class="btn btn-primary" id="ts-trend" disabled>生成趋势图</button>
+        <div class="ts-chart" id="ts-trend-wrap"></div>
+      </section>
+
+      <!-- ④ 方法精度对标 -->
+      <section class="block">
+        <div class="block-title">④ 方法精度对标</div>
+        <button class="btn btn-primary" id="ts-accuracy" disabled>方法精度对标</button>
+        <div class="ts-chart" id="ts-acc-wrap"></div>
+      </section>
+
+      <!-- ⑤ 残差诊断 + 误区词云 -->
+      <section class="block">
+        <div class="block-title">⑤ 残差诊断 · 误区词云</div>
+        <button class="btn btn-primary" id="ts-residual" disabled>残差诊断</button>
+        <div class="ts-chart" id="ts-res-wrap"></div>
+        <div class="block-title" style="margin-top:14px;">常见误区</div>
+        <div id="ts-cloud-wrap"></div>
+      </section>
+
+      <!-- ⑥ 推荐方法 + 预测 -->
+      <section class="block">
+        <div class="block-title">⑥ 智能推荐方法 + 预测</div>
+        <button class="btn btn-primary" id="ts-forecast" disabled>推荐方法并预测</button>
+        <div class="ts-chart" id="ts-fc-wrap"></div>
+      </section>
+
+      <!-- ⑦ 多方法预测对比 -->
+      <section class="block">
+        <div class="block-title">⑦ 多方法预测对比</div>
+        <button class="btn btn-primary" id="ts-compare" disabled>一键模拟对比</button>
+        <div class="ts-chart" id="ts-cmp-wrap"></div>
+      </section>
+
+      <footer class="disclaimer" id="ts-disclaimer"></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/echarts.min.js"></script>
+  <script src="vendor/echarts-wordcloud.min.js"></script>
+  <script src="kit/config.js"></script>
+  <script src="kit/datamgr.js"></script>
+  <script src="js/ts-config.js"></script>
+  <script src="js/ts-app.js"></script>
+</body>
+</html>

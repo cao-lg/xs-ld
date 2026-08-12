@@ -1,22 +1,20 @@
 /* ============================================================
- * 小数 · 漏斗诊断助手 — 数据层
- * 全部数据来自《产品功能规格书 v1.0》(2026-08-10)
- *
- * 【重要】以下基准数据 / 方案 / 词云均为「可编辑参考数据」，
- * 已抽成配置对象，支持：
- *   1) 文件导入（JSON）
- *   2) 一键 URL 同步（适配 Cloudflare Pages 静态托管）
- *   3) 导出当前配置为 JSON 模板
- *   4) 恢复内置默认
- *   5) localStorage 持久化
- * 内置 DEFAULT_CONFIG 作为兜底；导入时按字段合并（缺省字段回退默认），
- * 因此可只更新部分数据（如仅改基准、不改方案）。
+ * 小数 · 漏斗诊断助手 — 数据层（课程工具基座版）
+ * ------------------------------------------------------------
+ * 本文件已从"漏斗专用"重构为"基座驱动"：
+ *   - 数据形状由 DEFAULT_CONFIG 提供（作为引擎默认值）
+ *   - 字段融合规则由 FUNNEL_SCHEMA 声明（覆盖 benchmarks/plans/
+ *     painWords/courseLock/copy 等全部可编辑字段）
+ *   - 校验/合并/导入导出/localStorage 全部委托 kit/config.js 的泛型引擎
+ * 对外暴露的全局变量与函数名保持不变（CATEGORIES/BENCHMARK/PLANS/
+ * validateConfig/applyConfig/exportConfig/saveStoredConfig/...），
+ * 因此 js/app.js 无需任何改动即可继续工作。
  * ============================================================ */
 
 const SCHEMA_VERSION = '1.0';
 const STORAGE_KEY = 'xiaoshu.config.v1';
 
-/* ---------- 内置默认配置（规格书 v1.0，兜底用） ---------- */
+/* ---------- 内置默认配置（规格书 v1.0，作为引擎默认值/兜底） ---------- */
 const DEFAULT_CONFIG = {
   /* 五大品类（顺序即展示顺序） */
   categories: ['美妆护肤', '服饰鞋包', '食品饮料', '家电数码', '日用百货'],
@@ -40,8 +38,7 @@ const DEFAULT_CONFIG = {
     { key: 'finish', from: 'pay',      to: 'finish', label: '支付→完成' }
   ],
 
-  /* 行业基准速查表（单位 %）
-   * 每个品类给出五段转化率的 [下限, 上限]，下标顺序同 convSteps */
+  /* 行业基准速查表（单位 %）：每品类五段转化率的 [下限, 上限] */
   benchmarks: {
     '美妆护肤': { ctr: [15, 25], cart: [20, 30], order: [40, 60], pay: [85, 95], finish: [90, 95] },
     '服饰鞋包': { ctr: [10, 18], cart: [15, 25], order: [35, 55], pay: [82, 92], finish: [80, 90] },
@@ -59,9 +56,7 @@ const DEFAULT_CONFIG = {
     '日用百货': '低客单+高频，全指标居中偏上，没有极端瓶颈'
   },
 
-  /* 各品类智能方案推荐 + 模拟结果
-   * payRate: 支付率预测(%)，gmv/profit: GMV/利润变动(%)，
-   * tag: 方案标签，best: 是否最优解，extra: 附加影响说明，logic: 测算逻辑 */
+  /* 各品类智能方案推荐 + 模拟结果 */
   plans: {
     '美妆护肤': [
       { key: 'A', name: '满99包邮',      payRate: 85, gmv: 12,  profit: 15, extra: '成本受门槛控制', tag: '⭐最优',   best: true,
@@ -135,8 +130,7 @@ const DEFAULT_CONFIG = {
     disclaimer: '⚠️ 模拟预测基于历史数据与模型假设，仅供参考。不同品类基准不同，请务必同品类对比。'
   },
 
-  /* 下钻诊断 · 痛点词云关键词（按转化率环节）
-   * 每个环节给出若干「可能瓶颈原因」关键词，value 为权重（词云字号） */
+  /* 下钻诊断 · 痛点词云关键词（按转化率环节）。每个环节给出 [关键词, 权重] */
   painWords: {
     ctr:    [['主图同质化', 30], ['标题不精准', 22], ['人群错配', 20], ['竞品截流', 16], ['首图无卖点', 15], ['投放时段差', 12], ['价格无优势', 11]],
     cart:   [['详情页信任弱', 28], ['尺码/规格不清', 24], ['评价负面', 20], ['凑单门槛高', 17], ['缺对比测评', 14], ['优惠不显性', 12]],
@@ -150,6 +144,47 @@ const DEFAULT_CONFIG = {
 const FUNNEL_STAGES = DEFAULT_CONFIG.funnelStages;
 const CONV_STEPS = DEFAULT_CONFIG.convSteps;
 const CONV_KEYS = CONV_STEPS.map((s) => s.key);
+
+/* ---------- 配置 Schema（声明各字段的融合规则，供 kit 引擎使用） ---------- */
+const FUNNEL_SCHEMA = {
+  schemaVersion: SCHEMA_VERSION,
+  fields: [
+    { path: 'categories', kind: 'arrayItem', item: 'string', require: 'nonEmpty', error: 'categories 必须是非空字符串数组' },
+    { path: 'benchmarks', kind: 'matrix', dim1: { ref: 'categories' }, dim2: CONV_STEPS, cell: 'range', warn: '基准' },
+    { path: 'benchmarkLogic', kind: 'map', mode: 'assign', value: 'text' },
+    { path: 'plans', kind: 'groupedList', dim: { ref: 'categories' }, item: {
+      kind: 'object', addable: true, deletable: true,
+      fields: [
+        { sub: 'key', type: 'string', dflt: (i, def) => (def && def.key) || String.fromCharCode(65 + i) },
+        { sub: 'name', type: 'text', control: 'input', label: '方案名', dflt: (i, def) => (def && def.name) || ('方案' + ((def && def.key) || (i + 1))) },
+        { sub: 'payRate', type: 'number', label: '支付率%' },
+        { sub: 'gmv', type: 'number', label: 'GMV%' },
+        { sub: 'profit', type: 'number', label: '利润%' },
+        { sub: 'extra', type: 'text', control: 'input', label: '附加' },
+        { sub: 'tag', type: 'text', control: 'input', label: '标签' },
+        { sub: 'best', type: 'boolean', label: '最优解' },
+        { sub: 'logic', type: 'text', label: '测算逻辑' }
+      ]
+    } },
+    { path: 'painWords', kind: 'groupedList', dim: CONV_STEPS, item: { kind: 'pair', addable: true } },
+    { path: 'courseLock', kind: 'object', warn: 'courseLock 格式错误，已回退默认', fields: [
+      { sub: 'category', type: 'string', control: 'select', optionsRef: 'categories', label: '锁定品类' },
+      { sub: 'data', type: 'object', fields: FUNNEL_STAGES.map((s) => ({ sub: s.key, type: 'number', label: s.label })) }
+    ] },
+    { path: 'copy', kind: 'object', fields: [
+      { sub: 'welcome', type: 'text', label: '欢迎语' },
+      { sub: 'tips', type: 'object', fields: CONV_STEPS.flatMap(() => []).concat([
+        { sub: 'enter', type: 'text' }, { sub: 'dataReady', type: 'text' }, { sub: 'funnelDone', type: 'text' },
+        { sub: 'benchmarkDone', type: 'text' }, { sub: 'plansReady', type: 'text' }, { sub: 'simulateDone', type: 'text' }
+      ]) },
+      { sub: 'disclaimer', type: 'text', label: '免责声明' }
+    ] }
+  ]
+};
+
+/* ---------- 通用配置引擎（基座） ---------- */
+var CourseKit = window.CourseKit;
+var ENGINE = CourseKit.makeConfigEngine({ schema: FUNNEL_SCHEMA, defaults: DEFAULT_CONFIG, storageKey: STORAGE_KEY });
 
 /* ---------- 运行时数据（可被 applyConfig 覆盖） ---------- */
 let CATEGORIES = DEFAULT_CONFIG.categories.slice();
@@ -165,170 +200,41 @@ let COPY = {
   switchHint: (cat) => `基准已切换至【${cat}】，不同品类基准不可直接对比`
 };
 
-/* ---------- 工具：深拷贝（数据为 JSON 安全类型） ---------- */
+/* ---------- 工具：深拷贝 / 类型判断 ---------- */
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function isNum(x) { return typeof x === 'number' && isFinite(x); }
 function isPlainObj(x) { return x && typeof x === 'object' && !Array.isArray(x); }
 
 /* ============================================================
- * 配置校验 / 合并 / 导出 / 应用 / 存储
+ * 配置校验 / 合并 / 导出 / 应用 / 存储（委托基座引擎，保持对外接口）
  * ============================================================ */
 
-/* 校验导入的原始对象，返回 { ok, errors[], warnings[], cfg }
- * 采用「宽容合并」策略：结构错误记为 error（拒绝），
- * 取值范围/缺字段等记为 warning（回退默认并继续）。 */
-function validateConfig(raw) {
-  const errors = [];
-  const warnings = [];
-  if (!isPlainObj(raw)) {
-    return { ok: false, errors: ['根节点必须是 JSON 对象'], warnings };
-  }
-  const cfg = clone(DEFAULT_CONFIG);
+/* 校验导入的原始对象，返回 { ok, errors[], warnings[], cfg }（兼容原签名） */
+function validateConfig(raw) { return ENGINE.validate(raw); }
 
-  /* --- categories --- */
-  if (raw.categories !== undefined) {
-    if (!Array.isArray(raw.categories) || raw.categories.length === 0 ||
-        !raw.categories.every((c) => typeof c === 'string' && c.trim())) {
-      errors.push('categories 必须是非空字符串数组');
-    } else {
-      cfg.categories = raw.categories.map((c) => c.trim());
-    }
-  }
-
-  /* --- benchmarks --- */
-  if (raw.benchmarks !== undefined) {
-    if (!isPlainObj(raw.benchmarks)) {
-      errors.push('benchmarks 必须是对象（品类 -> 各环节 [下限,上限]）');
-    } else {
-      const cats = cfg.categories;
-      const merged = {};
-      cats.forEach((cat) => {
-        const src = raw.benchmarks[cat];
-        const def = DEFAULT_CONFIG.benchmarks[cat] || {};
-        if (!src || !isPlainObj(src)) { merged[cat] = Object.assign({}, def); return; }
-        const stepObj = {};
-        CONV_KEYS.forEach((k) => {
-          if (src[k] === undefined) { stepObj[k] = def[k] || [0, 100]; return; }
-          const v = src[k];
-          if (Array.isArray(v) && v.length === 2 && isNum(v[0]) && isNum(v[1])) {
-            if (v[0] > v[1]) { warnings.push(`基准「${cat}.${k}」下限>上限，已回退默认`); stepObj[k] = def[k] || [0, 100]; }
-            else stepObj[k] = [v[0], v[1]];
-          } else { warnings.push(`基准「${cat}.${k}」格式错误，已回退默认`); stepObj[k] = def[k] || [0, 100]; }
-        });
-        merged[cat] = stepObj;
-      });
-      cfg.benchmarks = merged;
-    }
-  }
-
-  /* --- benchmarkLogic --- */
-  if (raw.benchmarkLogic !== undefined && isPlainObj(raw.benchmarkLogic)) {
-    cfg.benchmarkLogic = Object.assign({}, DEFAULT_CONFIG.benchmarkLogic, raw.benchmarkLogic);
-  }
-
-  /* --- plans --- */
-  if (raw.plans !== undefined) {
-    if (!isPlainObj(raw.plans)) {
-      errors.push('plans 必须是对象（品类 -> 方案数组）');
-    } else {
-      const merged = {};
-      cfg.categories.forEach((cat) => {
-        const src = raw.plans[cat];
-        if (!Array.isArray(src) || src.length === 0) { merged[cat] = DEFAULT_CONFIG.plans[cat] || []; return; }
-        merged[cat] = src.map((p, i) => {
-          if (!isPlainObj(p)) { warnings.push(`方案「${cat}[${i}]」格式错误，已跳过`); return null; }
-          const def = (DEFAULT_CONFIG.plans[cat] || [])[i] || {};
-          const out = {
-            key: (typeof p.key === 'string' && p.key) ? p.key : (def.key || String.fromCharCode(65 + i)),
-            name: typeof p.name === 'string' ? p.name : (def.name || `方案${p.key || i + 1}`),
-            payRate: isNum(p.payRate) ? p.payRate : (def.payRate || 0),
-            gmv: isNum(p.gmv) ? p.gmv : (def.gmv || 0),
-            profit: isNum(p.profit) ? p.profit : (def.profit || 0),
-            extra: typeof p.extra === 'string' ? p.extra : (def.extra || ''),
-            tag: typeof p.tag === 'string' ? p.tag : (def.tag || ''),
-            best: typeof p.best === 'boolean' ? p.best : (def.best || false),
-            logic: typeof p.logic === 'string' ? p.logic : (def.logic || '')
-          };
-          return out;
-        }).filter(Boolean);
-        if (merged[cat].length === 0) merged[cat] = DEFAULT_CONFIG.plans[cat] || [];
-      });
-      cfg.plans = merged;
-    }
-  }
-
-  /* --- painWords --- */
-  if (raw.painWords !== undefined) {
-    if (!isPlainObj(raw.painWords)) {
-      errors.push('painWords 必须是对象（环节 -> [[词,权重],...]）');
-    } else {
-      const merged = {};
-      CONV_KEYS.forEach((k) => {
-        const src = raw.painWords[k];
-        const def = DEFAULT_CONFIG.painWords[k] || [];
-        if (!Array.isArray(src)) { merged[k] = def.slice(); return; }
-        const arr = src
-          .filter((w) => Array.isArray(w) && typeof w[0] === 'string' && isNum(w[1]))
-          .map((w) => [w[0], w[1]]);
-        merged[k] = arr.length ? arr : def.slice();
-      });
-      cfg.painWords = merged;
-    }
-  }
-
-  /* --- courseLock --- */
-  if (raw.courseLock !== undefined) {
-    if (!isPlainObj(raw.courseLock) || typeof raw.courseLock.category !== 'string' ||
-        !isPlainObj(raw.courseLock.data)) {
-      warnings.push('courseLock 格式错误，已回退默认');
-    } else {
-      const data = {};
-      FUNNEL_STAGES.forEach((s) => { data[s.key] = isNum(raw.courseLock.data[s.key]) ? raw.courseLock.data[s.key] : DEFAULT_CONFIG.courseLock.data[s.key]; });
-      cfg.courseLock = { category: raw.courseLock.category, data };
-    }
-  }
-
-  /* --- copy --- */
-  if (raw.copy !== undefined && isPlainObj(raw.copy)) {
-    if (typeof raw.copy.welcome === 'string') cfg.copy.welcome = raw.copy.welcome;
-    if (isPlainObj(raw.copy.tips)) cfg.copy.tips = Object.assign({}, DEFAULT_CONFIG.copy.tips, raw.copy.tips);
-    if (typeof raw.copy.disclaimer === 'string') cfg.copy.disclaimer = raw.copy.disclaimer;
-  }
-
-  return { ok: errors.length === 0, errors, warnings, cfg };
+/* 把引擎融合后的 cfg 同步到运行时全局变量（保留 COPY.switchHint 函数） */
+function syncRuntime(cfg) {
+  CATEGORIES = cfg.categories.slice();
+  BENCHMARK = cfg.benchmarks;
+  BENCHMARK_LOGIC = cfg.benchmarkLogic;
+  PLANS = cfg.plans;
+  PAIN_WORDS = cfg.painWords;
+  COURSE_LOCK = cfg.courseLock;
+  COPY.welcome = cfg.copy.welcome;
+  COPY.tips = cfg.copy.tips;
+  COPY.disclaimer = cfg.copy.disclaimer;
 }
 
-/* 应用配置：覆盖运行时变量（不覆盖结构骨架）。返回 { ok, errors, warnings } */
+/* 应用配置：覆盖运行时变量。返回 { ok, errors, warnings }（兼容原签名） */
 function applyConfig(raw) {
-  const res = validateConfig(raw);
+  const res = ENGINE.apply(raw);
   if (!res.ok) return { ok: false, errors: res.errors, warnings: [] };
-  const c = res.cfg;
-  CATEGORIES = c.categories.slice();
-  BENCHMARK = c.benchmarks;
-  BENCHMARK_LOGIC = c.benchmarkLogic;
-  PLANS = c.plans;
-  PAIN_WORDS = c.painWords;
-  COURSE_LOCK = c.courseLock;
-  COPY.welcome = c.copy.welcome;
-  COPY.tips = c.copy.tips;
-  COPY.disclaimer = c.copy.disclaimer;
+  syncRuntime(res.cfg);
   return { ok: true, errors: [], warnings: res.warnings };
 }
 
 /* 恢复内置默认 */
-function resetToDefault() {
-  const res = applyConfig({});
-  CATEGORIES = DEFAULT_CONFIG.categories.slice();
-  BENCHMARK = clone(DEFAULT_CONFIG.benchmarks);
-  BENCHMARK_LOGIC = Object.assign({}, DEFAULT_CONFIG.benchmarkLogic);
-  PLANS = clone(DEFAULT_CONFIG.plans);
-  PAIN_WORDS = clone(DEFAULT_CONFIG.painWords);
-  COURSE_LOCK = clone(DEFAULT_CONFIG.courseLock);
-  COPY.welcome = DEFAULT_CONFIG.copy.welcome;
-  COPY.tips = Object.assign({}, DEFAULT_CONFIG.copy.tips);
-  COPY.disclaimer = DEFAULT_CONFIG.copy.disclaimer;
-  return res;
-}
+function resetToDefault() { return applyConfig({}); }
 
 /* 导出当前运行配置为 JSON 对象（含元信息，可直接回灌） */
 function exportConfig(meta = {}) {
@@ -346,35 +252,17 @@ function exportConfig(meta = {}) {
   };
 }
 
-/* ---------- localStorage 持久化 ---------- */
+/* ---------- localStorage 持久化（委托引擎） ---------- */
 function saveStoredConfig(meta) {
-  try {
-    const payload = { meta: Object.assign({ schemaVersion: SCHEMA_VERSION, savedAt: new Date().toISOString() }, meta), config: exportConfig(meta) };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    return true;
-  } catch (e) { return false; }
+  try { return ENGINE.saveStored(meta || {}, exportConfig(meta)); }
+  catch (e) { return false; }
 }
-function loadStoredConfig() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const payload = JSON.parse(raw);
-    if (!payload || !payload.config) return null;
-    return payload;
-  } catch (e) { return null; }
-}
-function clearStoredConfig() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-}
+function loadStoredConfig() { return ENGINE.loadStored(); }
+function clearStoredConfig() { ENGINE.clearStored(); }
 
 /* ============================================================
- * 健康度判定 + 诊断（计算逻辑固定，不随导入改变）
+ * 健康度判定 + 诊断（计算逻辑固定，与配置无关）
  * ============================================================ */
-
-/* 健康度判定规则
- * 超标(🟢)：本店值 ≥ 行业基准上限
- * 在基准内(🟡)：行业基准下限 ≤ 本店值 < 行业基准上限
- * 低于基准(🔴)：本店值 < 行业基准下限 */
 function healthOf(value, range) {
   if (value >= range[1]) return 'good';   // 🟢 超标
   if (value >= range[0]) return 'mid';     // 🟡 在基准内
@@ -386,7 +274,6 @@ const HEALTH_META = {
   low:  { dot: '🔴', text: '低于基准（需关注）' }
 };
 
-/* 环节诊断文案：依据本店转化率与基准区间生成 */
 function diagnoseStep(stepKey, rate, range, category) {
   const h = healthOf(rate, range);
   const [low, up] = range;
