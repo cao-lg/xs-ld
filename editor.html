@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>基准数据在线编辑器 · 小数漏斗诊断助手</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/editor.css" />
+</head>
+<body>
+  <header class="ed-header">
+    <div class="ed-header-inner">
+      <h1>🛠️ 基准数据在线编辑器</h1>
+      <a class="ed-back" href="index.html">← 返回主程序</a>
+    </div>
+    <nav class="ed-nav">
+      <a href="#sec-bench">① 行业基准</a>
+      <a href="#sec-logic">② 基准依据</a>
+      <a href="#sec-plans">③ 智能方案</a>
+      <a href="#sec-pain">④ 痛点词云</a>
+      <a href="#sec-course">⑤ 微课案例</a>
+      <a href="#sec-copy">⑥ 文案</a>
+    </nav>
+  </header>
+
+  <main class="ed-main">
+    <p class="ed-intro">
+      <b>可视化编辑</b>全部参考数据，无需手改 JSON。点 <b>保存（本地）</b> 写入浏览器，与主程序共用同一存储，打开主程序即生效；
+      点 <b>导出 JSON</b> 下载 <code>benchmark.json</code>，提交到仓库根目录后，所有人用主程序的「一键更新」即可同步。
+    </p>
+
+    <section id="sec-bench" class="ed-sec">
+      <h2>① 行业基准（五段转化率区间 %）</h2>
+      <div id="ed-bench"></div>
+    </section>
+
+    <section id="sec-logic" class="ed-sec">
+      <h2>② 基准设计依据（透明度说明）</h2>
+      <div id="ed-logic"></div>
+    </section>
+
+    <section id="sec-plans" class="ed-sec">
+      <h2>③ 智能方案推荐 + 模拟结果</h2>
+      <div id="ed-plans"></div>
+    </section>
+
+    <section id="sec-pain" class="ed-sec">
+      <h2>④ 下钻诊断 · 痛点词云</h2>
+      <div id="ed-pain"></div>
+    </section>
+
+    <section id="sec-course" class="ed-sec">
+      <h2>⑤ 微课固定案例（锁定数据）</h2>
+      <div id="ed-course"></div>
+    </section>
+
+    <section id="sec-copy" class="ed-sec">
+      <h2>⑥ 文案（欢迎语 / 提示 / 免责）</h2>
+      <div id="ed-copy"></div>
+    </section>
+
+    <section class="ed-sec">
+      <details class="ed-json-wrap">
+        <summary>👁️ 预览 / 校验 JSON</summary>
+        <pre id="ed-json"></pre>
+      </details>
+    </section>
+  </main>
+
+  <div class="ed-actionbar">
+    <button class="btn btn-sm btn-primary" id="ed-save">💾 保存</button>
+    <button class="btn btn-sm" id="ed-export">⬇️ 导出</button>
+    <button class="btn btn-sm" id="ed-import">⬆️ 导入</button>
+    <input type="file" id="ed-file" accept=".json,application/json" hidden />
+    <button class="btn btn-sm btn-warn" id="ed-reset">↺ 默认</button>
+    <span class="ed-status" id="ed-status"></span>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>

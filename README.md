@@ -20,9 +20,12 @@
 ```
 /workspace
 ├── index.html                 # 入口页（H5 单页应用）
-├── css/style.css              # 移动端优先样式
+├── editor.html                # 基准数据在线可视化编辑器（表单编辑 + 保存/导出/导入）
+├── css/style.css              # 移动端优先样式（主程序）
+├── css/editor.css             # 编辑器专用样式
 ├── js/data.js                 # 五大品类基准数据 + 四方案推荐表 + 诊断词云数据
 ├── js/app.js                  # 交互逻辑：ECharts 漏斗、对比图、词云、方案、模拟
+├── js/editor.js               # 编辑器逻辑：渲染 / 双向绑定 / 保存 / 导出 / 导入
 ├── vendor/
 │   ├── echarts.min.js         # ECharts 图表库（漏斗、对比柱状图）
 │   └── echarts-wordcloud.min.js  # ECharts 词云扩展
@@ -126,6 +129,20 @@ wrangler pages deploy . --project-name=xiaoshu-h5
 2. 用编辑器修改后保存为 `.json`。
 3. 点击 **⬆️ 导入 JSON 文件** 选择该文件，即可热更新。
 
+### 方式 D：在线可视化编辑（推荐，零门槛，不手改 JSON）
+
+数据量较大时，手改 `benchmark.json` 容易出错。可直接打开 **`editor.html`** 用表单编辑：
+
+1. 进入主程序 → 展开「🛠️ 基准数据管理」→ 点 **🖊️ 在线编辑**（或直接访问 `editor.html`）。
+2. 六个区块（行业基准 / 基准依据 / 智能方案 / 痛点词云 / 微课案例 / 文案）均为可视化表单，痛点词云支持「+ 添加关键词」增删。
+3. **💾 保存（本地）**：写入浏览器 `localStorage`，与主程序共用同一存储，**打开主程序即生效**（无需改文件）。
+4. **⬇️ 导出 JSON**：下载 `benchmark.json`，提交到仓库根目录后，所有人用主程序的「一键更新」即可同步。
+5. **⬆️ 导入 JSON**：把之前导出的文件或同事的 `benchmark.json` 载入继续编辑。
+6. **↺ 默认**：一键载入内置默认（未保存不会覆盖本地）。
+7. 底部「👁️ 预览 / 校验 JSON」实时显示当前配置的 JSON，格式异常会标红。
+
+> 编辑器与主程序共用存储键 `xiaoshu.config.v1`，因此「在编辑器保存」等同于「在主程序导入同一份配置」，二者随时互通。
+
 ### 方式 C：恢复内置默认
 
 点击 **↺ 恢复内置默认**，将清空 `localStorage` 中的外部配置并回退到规格书 v1.0 内置数据。
@@ -152,6 +169,9 @@ wrangler pages deploy . --project-name=xiaoshu-h5
 - `screenshots/drill.png`：下钻诊断卡片 + 痛点词云
 - `screenshots/plans.png`：四方案智能推荐
 - `screenshots/compare.png`：四方案模拟对比（最优解高亮）
+- `screenshots/editor.png`：基准数据在线编辑器（总览）
+- `screenshots/editor-plans.png`：智能方案可视化编辑
+- `screenshots/editor-pain.png`：痛点词云可视化编辑（支持增删）
 - `screenshots/data-mgr.png`：基准数据管理面板（导入 / 导出 / 一键更新 / 恢复默认）
 
 ---
