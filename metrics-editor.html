@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>配置在线编辑器 · 电商各类指标</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="kit/kit.css" />
+</head>
+<body>
+  <header class="ed-header">
+    <div class="ed-header-inner">
+      <h1>🛠️ 配置在线编辑器</h1>
+      <a class="ed-back" href="metrics.html">← 返回主程序</a>
+    </div>
+    <nav class="ed-nav">
+      <a href="#sec-m">① 指标与漏斗</a>
+      <a href="#sec-pit">② 误区词云</a>
+      <a href="#sec-copy">③ 文案</a>
+    </nav>
+  </header>
+
+  <main class="ed-main">
+    <p class="ed-intro">
+      <b>可视化编辑</b>全部参考数据，无需手改 JSON。点 <b>保存（本地）</b> 写入浏览器，与主程序共用同一存储，打开主程序即生效；
+      点 <b>导出 JSON</b> 下载 <code>metrics-config.json</code>，提交到仓库根目录后，所有人用主程序的「一键更新」即可同步。
+    </p>
+
+    <section id="sec-m" class="ed-sec">
+      <h2>① 转化漏斗 + 运营指标</h2>
+      <p class="ed-sec-hint">漏斗：访客 → 加购 → 下单 → 支付各环节人数/笔数。指标：名称 / 分类 / 当前值 / 单位 / 行业基准。可增删。</p>
+      <div id="ed-funnel"></div>
+      <div id="ed-indicators"></div>
+    </section>
+
+    <section id="sec-pit" class="ed-sec">
+      <h2>② 常见误区词云（关键词 + 权重）</h2>
+      <p class="ed-sec-hint">权重越大，误区词云中字体越大。</p>
+      <div id="ed-pitfalls"></div>
+    </section>
+
+    <section id="sec-copy" class="ed-sec">
+      <h2>③ 文案（欢迎语 / 提示 / 免责）</h2>
+      <div id="ed-copy"></div>
+    </section>
+
+    <section class="ed-sec">
+      <details class="ed-json-wrap">
+        <summary>👁️ 预览 / 校验 JSON</summary>
+        <pre id="ed-json"></pre>
+      </details>
+    </section>
+  </main>
+
+  <div class="ed-actionbar">
+    <button class="btn btn-sm btn-primary" id="ed-save">💾 保存</button>
+    <button class="btn btn-sm" id="ed-export">⬇️ 导出</button>
+    <button class="btn btn-sm" id="ed-import">⬆️ 导入</button>
+    <input type="file" id="ed-file" accept=".json,application/json" hidden />
+    <button class="btn btn-sm btn-warn" id="ed-reset">↺ 默认</button>
+    <span class="ed-status" id="ed-status"></span>
+  </div>
+
+  <script src="kit/config.js"></script>
+  <script src="kit/editor.js"></script>
+  <script src="js/metrics-config.js"></script>
+  <script src="js/metrics-editor.js"></script>
+</body>
+</html>

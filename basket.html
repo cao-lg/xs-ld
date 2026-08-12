@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b6cff" />
+  <title>购物篮关联分析 · 小数</title>
+  <meta name="description" content="电商数据分析教学工具：从交易数据发现商品搭配规律，计算支持度 / 置信度 / 提升度，输出强关联规则。纯前端，无需后端。" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .basket-chart { width: 100%; height: 320px; margin-top: 10px; }
+    #basket-cloud-wrap { width: 100%; height: 240px; margin-top: 10px; }
+    .basket-input { width: 100%; min-height: 110px; border: 1px solid #dde0ea; border-radius: 10px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+    .basket-table { max-height: 320px; overflow: auto; margin-top: 10px; border: 1px solid #e7e9f3; border-radius: 10px; }
+    .basket-table table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    .basket-table th, .basket-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #f0f1f7; white-space: nowrap; }
+    .basket-table th { position: sticky; top: 0; background: #f7f8fd; color: var(--ink-soft); }
+    .basket-table .rk-strong td:first-child { font-weight: 700; color: var(--primary); }
+    .basket-table .rk-neg td:first-child { color: #e5484d; }
+    .app-bar-back { display: inline-block; font-size: 13px; color: #fff; opacity: .92; text-decoration: none; margin-bottom: 6px; }
+    .app-bar-back:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="app-bar">
+      <a class="app-bar-back" href="index.html">← 课程工具</a>
+      <div class="app-bar-title">🛒 购物篮关联分析 · 小数</div>
+      <div class="app-bar-sub">电商运营教学验证工具 · 教师主导</div>
+    </header>
+
+    <main class="screen">
+      <section class="welcome" id="basket-welcome"></section>
+
+      <details class="data-mgr" id="data-mgr">
+        <summary class="data-mgr-sum">
+          <span>🛠️ 配置数据管理</span>
+          <span class="src-badge" id="src-badge">内置默认</span>
+        </summary>
+        <div class="data-mgr-body">
+          <p class="dm-hint">交易清单、关联规则阈值、误区词云等均可编辑。修改后导出 JSON，下次可一键更新，保持数据最新。</p>
+          <div class="dm-actions">
+            <button class="btn btn-sm" id="btn-export">⬇️ 导出当前JSON</button>
+            <button class="btn btn-sm" id="btn-import">⬆️ 导入JSON文件</button>
+            <input type="file" id="file-import" accept=".json,application/json" hidden />
+            <button class="btn btn-sm btn-warn" id="btn-reset-config">↺ 恢复内置默认</button>
+            <a class="btn btn-sm btn-primary" id="btn-editor" href="basket-editor.html" style="text-decoration:none;display:inline-flex;align-items:center;">🖊️ 在线编辑</a>
+          </div>
+          <div class="dm-update">
+            <label class="dm-url-label" for="update-url">一键更新地址</label>
+            <div class="dm-url-row">
+              <input type="text" id="update-url" class="dm-url" placeholder="./basket-config.json" value="./basket-config.json" inputmode="url" />
+              <button class="btn btn-sm btn-primary" id="btn-fetch-update">🔄 一键更新</button>
+            </div>
+          </div>
+          <p class="dm-note" id="dm-note"></p>
+        </div>
+      </details>
+
+      <!-- ① 交易数据 -->
+      <section class="block">
+        <div class="block-title">① 交易数据</div>
+        <p class="bench-logic">每行一笔交易：<b>编号, 商品1, 商品2, …</b>（商品逗号分隔）。可先点「载入内置示例」。</p>
+        <textarea class="basket-input" id="basket-input" placeholder="T01,牛奶,面包,鸡蛋&#10;T02,尿布,啤酒,薯片"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="basket-apply">应用数据</button>
+          <button class="btn btn-ghost" id="basket-load">载入内置示例</button>
+        </div>
+      </section>
+
+      <!-- ② 单品/双品频次 -->
+      <section class="block">
+        <div class="block-title">② 单品 / 双品频次（支持度）</div>
+        <button class="btn btn-primary" id="basket-freq" disabled>频次统计</button>
+        <div class="bench-logic" style="margin-top:8px;">单品支持度 = 含该商品的交易数 ÷ 总交易数</div>
+        <div class="basket-chart" id="basket-freq-wrap"></div>
+        <div class="bench-logic" style="margin-top:8px;">双品共现支持度（Top 组合）</div>
+        <div class="basket-chart" id="basket-pair-wrap"></div>
+      </section>
+
+      <!-- ③ 关联规则 -->
+      <section class="block">
+        <div class="block-title">③ 关联规则（支持度 / 置信度 / 提升度）</div>
+        <button class="btn btn-primary" id="basket-rules" disabled>生成关联规则</button>
+      </section>
+
+      <!-- ④ 规则散点 -->
+      <section class="block">
+        <div class="block-title">④ 规则散点（支持度 × 置信度，气泡=提升度）</div>
+        <button class="btn btn-primary" id="basket-scatter" disabled>绘制规则散点</button>
+        <div class="basket-chart" id="basket-scatter-wrap"></div>
+      </section>
+
+      <!-- ⑤ 强关联规则列表 -->
+      <section class="block">
+        <div class="block-title">⑤ 强关联规则列表（按提升度排序）</div>
+        <button class="btn btn-primary" id="basket-list" disabled>生成规则列表</button>
+        <div id="basket-list-wrap"></div>
+      </section>
+
+      <!-- ⑥ 误区词云 -->
+      <section class="block">
+        <div class="block-title">⑥ 常见误区 · 词云</div>
+        <button class="btn btn-primary" id="basket-cloud" disabled>生成误区词云</button>
+        <div id="basket-cloud-wrap"></div>
+      </section>
+
+      <footer class="disclaimer" id="basket-disclaimer"></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/echarts.min.js"></script>
+  <script src="vendor/echarts-wordcloud.min.js"></script>
+  <script src="kit/config.js"></script>
+  <script src="kit/datamgr.js"></script>
+  <script src="js/basket-config.js"></script>
+  <script src="js/basket-app.js"></script>
+</body>
+</html>

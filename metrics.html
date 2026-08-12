@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b6cff" />
+  <title>电商各类指标 · 小数</title>
+  <meta name="description" content="电商数据分析教学工具：梳理流量/转化/客单价/留存/营销五大类指标，画转化漏斗、算关键比率、与行业基准做雷达对标。纯前端，无需后端。" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .metrics-chart { width: 100%; height: 340px; margin-top: 10px; }
+    #metrics-cloud-wrap { width: 100%; height: 240px; margin-top: 10px; }
+    .metrics-input { width: 100%; min-height: 110px; border: 1px solid #dde0ea; border-radius: 10px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+    /* 指标概览卡片 */
+    .mk-group { margin-top: 12px; }
+    .mk-group-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+    .mk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mk-card { border: 1px solid #e7e9f3; border-radius: 10px; padding: 9px 10px; background: #fff; }
+    .mk-name { font-size: 12px; color: var(--ink-soft); }
+    .mk-val { font-size: 18px; font-weight: 700; color: var(--ink); margin: 3px 0 6px; }
+    .mk-bar { position: relative; height: 8px; background: #eef0f6; border-radius: 5px; overflow: hidden; }
+    .mk-cur { position: absolute; left: 0; top: 0; height: 100%; border-radius: 5px; }
+    .mk-bm { position: absolute; top: -2px; width: 2px; height: 12px; background: #1f2440; opacity: .55; }
+    .mk-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 11px; }
+    .mk-bench { color: var(--ink-soft); }
+    .mk-delta.up { color: #1faa6b; } .mk-delta.down { color: #e5484d; }
+    /* 比率表 */
+    .mk-table { margin-top: 10px; border: 1px solid #e7e9f3; border-radius: 10px; overflow: hidden; }
+    .mk-table table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    .mk-table th, .mk-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #f0f1f7; white-space: nowrap; }
+    .mk-table th { background: #f7f8fd; color: var(--ink-soft); }
+    .mk-table .rk-ok td:last-child { color: #1faa6b; font-weight: 700; }
+    .mk-table .rk-no td:last-child { color: #e5484d; font-weight: 700; }
+    .app-bar-back { display: inline-block; font-size: 13px; color: #fff; opacity: .92; text-decoration: none; margin-bottom: 6px; }
+    .app-bar-back:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="app-bar">
+      <a class="app-bar-back" href="index.html">← 课程工具</a>
+      <div class="app-bar-title">📐 电商各类指标 · 小数</div>
+      <div class="app-bar-sub">电商运营教学验证工具 · 教师主导</div>
+    </header>
+
+    <main class="screen">
+      <section class="welcome" id="metrics-welcome"></section>
+
+      <details class="data-mgr" id="data-mgr">
+        <summary class="data-mgr-sum">
+          <span>🛠️ 配置数据管理</span>
+          <span class="src-badge" id="src-badge">内置默认</span>
+        </summary>
+        <div class="data-mgr-body">
+          <p class="dm-hint">转化漏斗、运营指标、误区词云等均可编辑。修改后导出 JSON，下次可一键更新，保持数据最新。</p>
+          <div class="dm-actions">
+            <button class="btn btn-sm" id="btn-export">⬇️ 导出当前JSON</button>
+            <button class="btn btn-sm" id="btn-import">⬆️ 导入JSON文件</button>
+            <input type="file" id="file-import" accept=".json,application/json" hidden />
+            <button class="btn btn-sm btn-warn" id="btn-reset-config">↺ 恢复内置默认</button>
+            <a class="btn btn-sm btn-primary" id="btn-editor" href="metrics-editor.html" style="text-decoration:none;display:inline-flex;align-items:center;">🖊️ 在线编辑</a>
+          </div>
+          <div class="dm-update">
+            <label class="dm-url-label" for="update-url">一键更新地址</label>
+            <div class="dm-url-row">
+              <input type="text" id="update-url" class="dm-url" placeholder="./metrics-config.json" value="./metrics-config.json" inputmode="url" />
+              <button class="btn btn-sm btn-primary" id="btn-fetch-update">🔄 一键更新</button>
+            </div>
+          </div>
+          <p class="dm-note" id="dm-note"></p>
+        </div>
+      </details>
+
+      <!-- ① 指标数据 -->
+      <section class="block">
+        <div class="block-title">① 指标数据</div>
+        <p class="bench-logic">每行一项指标：<b>指标名, 分类, 当前值, 单位, 行业基准</b>。可先点「载入内置示例」（漏斗取自配置）。</p>
+        <textarea class="metrics-input" id="metrics-input" placeholder="访客数 UV,流量,120000,人,100000&#10;加购率,转化,0.2,,0.18"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="metrics-apply">应用数据</button>
+          <button class="btn btn-ghost" id="metrics-load">载入内置示例</button>
+        </div>
+      </section>
+
+      <!-- ② 指标概览 -->
+      <section class="block">
+        <div class="block-title">② 指标概览（按 流量/转化/客单价/留存/营销 分组）</div>
+        <button class="btn btn-primary" id="metrics-overview" disabled>指标概览</button>
+        <div id="metrics-overview-wrap"></div>
+      </section>
+
+      <!-- ③ 转化漏斗 -->
+      <section class="block">
+        <div class="block-title">③ 转化漏斗（访客 → 加购 → 下单 → 支付）</div>
+        <button class="btn btn-primary" id="metrics-funnel" disabled>绘制转化漏斗</button>
+        <div class="metrics-chart" id="metrics-funnel-wrap"></div>
+      </section>
+
+      <!-- ④ 关键比率 -->
+      <section class="block">
+        <div class="block-title">④ 关键比率（加购率 / 支付转化率 / 客单价 / 复购率）</div>
+        <button class="btn btn-primary" id="metrics-ratio" disabled>计算关键比率</button>
+        <div id="metrics-ratio-wrap"></div>
+      </section>
+
+      <!-- ⑤ 雷达对标 -->
+      <section class="block">
+        <div class="block-title">⑤ 雷达对标（当前值 vs 行业基准）</div>
+        <button class="btn btn-primary" id="metrics-radar" disabled>绘制雷达对标</button>
+        <div class="metrics-chart" id="metrics-radar-wrap"></div>
+      </section>
+
+      <!-- ⑥ 误区词云 -->
+      <section class="block">
+        <div class="block-title">⑥ 常见误区 · 词云</div>
+        <button class="btn btn-primary" id="metrics-cloud" disabled>生成误区词云</button>
+        <div id="metrics-cloud-wrap"></div>
+      </section>
+
+      <footer class="disclaimer" id="metrics-disclaimer"></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/echarts.min.js"></script>
+  <script src="vendor/echarts-wordcloud.min.js"></script>
+  <script src="kit/config.js"></script>
+  <script src="kit/datamgr.js"></script>
+  <script src="js/metrics-config.js"></script>
+  <script src="js/metrics-app.js"></script>
+</body>
+</html>
