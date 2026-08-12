@@ -1,0 +1,57 @@
+/* ============================================================
+ * 课程工具系列 · 主页与通用样式（返回链接、工具卡片网格）
+ * 由 index.html / funnel.html / xiaoshu.html 共用
+ * ============================================================ */
+
+/* 返回课程工具（主页）链接，放在 app-bar 顶部 */
+.app-bar-back {
+  display: inline-block;
+  font-size: 13px;
+  color: #fff;
+  opacity: .92;
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+.app-bar-back:hover { opacity: 1; }
+
+/* 主页 hero 简介 */
+.home-hero { background: linear-gradient(135deg, #ffffff, #eef0ff); }
+.home-hero-title { font-size: 17px; font-weight: 800; color: var(--primary-d); margin-bottom: 6px; }
+.home-hero-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+.home-hero-desc code {
+  background: #eef0fb; color: var(--primary-d); padding: 1px 5px; border-radius: 5px; font-size: 11.5px;
+}
+
+/* 工具卡片网格：移动端单列，宽屏两列 */
+.tool-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 2px 0 6px; }
+@media (min-width: 560px) { .tool-grid { grid-template-columns: 1fr 1fr; } }
+
+.tool-card {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 15px 15px 13px;
+  box-shadow: var(--shadow);
+  border: 1px solid transparent;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.tool-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.tool-ico { font-size: 26px; line-height: 1; }
+.tool-name { font-weight: 700; font-size: 15px; margin: 8px 0 4px; }
+.tool-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.5; min-height: 32px; }
+.tool-go { margin-top: 10px; color: var(--primary); font-weight: 700; font-size: 13px; }
+
+/* 尚未实现的工具：灰态占位，不可点 */
+.tool-card.locked { opacity: .55; pointer-events: none; filter: grayscale(.35); }
+.tool-badge {
+  margin-top: 10px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: #eef0f8;
+  color: var(--ink-soft);
+  padding: 2px 9px;
+  border-radius: 20px;
+}

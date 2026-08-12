@@ -12,6 +12,13 @@
     #ts-cloud-wrap { width: 100%; height: 240px; margin-top: 10px; }
     .ts-input { width: 100%; min-height: 64px; border: 1px solid #dde0ea; border-radius: 10px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
     #ts-case { width: 100%; padding: 9px 10px; border: 1px solid #dde0ea; border-radius: 10px; font-size: 14px; background: #fff; }
+    .ts-sta { width: 100%; margin-top: 10px; }
+    .sta-box { background: #f7f8fd; border: 1px solid #e7e9f3; border-radius: 10px; padding: 12px 14px; }
+    .sta-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: var(--ink-soft); }
+    .sta-row b { color: var(--ink); }
+    .sta-verdict { margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    .sta-verdict.ok { background: #e6f7ef; color: var(--good); }
+    .sta-verdict.warn { background: #fdeee0; color: var(--mid); }
   </style>
 </head>
 <body>
@@ -101,6 +108,36 @@
         <div class="block-title">⑦ 多方法预测对比</div>
         <button class="btn btn-primary" id="ts-compare" disabled>一键模拟对比</button>
         <div class="ts-chart" id="ts-cmp-wrap"></div>
+      </section>
+
+      <!-- ⑧ 平稳性检验 ADF -->
+      <section class="block">
+        <div class="block-title">⑧ 平稳性检验（ADF）</div>
+        <button class="btn btn-primary" id="ts-stationarity" disabled>平稳性检验</button>
+        <div class="ts-sta" id="ts-sta-wrap"></div>
+      </section>
+
+      <!-- ⑨ 自相关 ACF / PACF -->
+      <section class="block">
+        <div class="block-title">⑨ 自相关 ACF / PACF</div>
+        <button class="btn btn-primary" id="ts-acf" disabled>绘制 ACF/PACF</button>
+        <div class="ts-chart" id="ts-acf-wrap"></div>
+        <div class="block-title" style="margin-top:14px;">偏自相关 PACF</div>
+        <div class="ts-chart" id="ts-pacf-wrap"></div>
+      </section>
+
+      <!-- ⑩ 季节分解 -->
+      <section class="block">
+        <div class="block-title">⑩ 季节分解（趋势/季节/残差）</div>
+        <button class="btn btn-primary" id="ts-decomp" disabled>季节分解</button>
+        <div class="ts-chart" id="ts-decomp-wrap"></div>
+      </section>
+
+      <!-- ⑪ ARIMA / SARIMA 预测 -->
+      <section class="block">
+        <div class="block-title">⑪ ARIMA / SARIMA 预测</div>
+        <button class="btn btn-primary" id="ts-arima" disabled>ARIMA 预测</button>
+        <div class="ts-chart" id="ts-arima-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="ts-disclaimer"></footer>

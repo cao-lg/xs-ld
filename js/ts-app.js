@@ -46,11 +46,13 @@
   /* 切换案例 / 重新载入配置时：清空所有图表、重置分析状态与后续步骤按钮 */
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
-    ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap']
+    ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap',
+      'ts-sta-wrap', 'ts-acf-wrap', 'ts-pacf-wrap', 'ts-decomp-wrap', 'ts-arima-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false };
-    state.methodAcc = null; state.recommend = null; state.forecast = null;
-    ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare'].forEach(function (id) { $id(id).disabled = true; });
+    state.built = { trend: false, acc: false, res: false, fc: false, cmp: false, sta: false, acf: false, decomp: false, arima: false };
+    state.methodAcc = null; state.recommend = null; state.forecast = null; state.arima = null;
+    ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare',
+      'ts-stationarity', 'ts-acf', 'ts-decomp', 'ts-arima'].forEach(function (id) { $id(id).disabled = true; });
   }
 
   var ACC_COLOR = { good: '#1f9e6b', mid: '#d99a00', low: '#e5484d' };
@@ -155,6 +157,10 @@
     $id('ts-residual').addEventListener('click', buildResidual);
     $id('ts-forecast').addEventListener('click', buildForecast);
     $id('ts-compare').addEventListener('click', buildCompare);
+    $id('ts-stationarity').addEventListener('click', buildStationarity);
+    $id('ts-acf').addEventListener('click', buildAcf);
+    $id('ts-decomp').addEventListener('click', buildDecomp);
+    $id('ts-arima').addEventListener('click', buildArima);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({
       engine: ENGINE,
@@ -170,7 +176,9 @@
     var ta = $id('ts-input'); if (ta) ta.value = data.join(', ');
     state.series = data.slice();
     state.hasData = data.length > 0;
-    if (data.length >= 6) { var t = $id('ts-trend'); if (t) t.disabled = false; }
+    if (data.length >= 6) {
+      ['ts-trend', 'ts-stationarity', 'ts-acf', 'ts-decomp', 'ts-arima'].forEach(function (id) { var b = $id(id); if (b) b.disabled = false; });
+    }
     toast('已载入案例「' + state.caseName + '」共 ' + data.length + ' 期', 'info');
   }
 
@@ -183,7 +191,7 @@
     ['ts-trend-wrap', 'ts-acc-wrap', 'ts-res-wrap', 'ts-cloud-wrap', 'ts-fc-wrap', 'ts-cmp-wrap'].forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
     ['ts-trend', 'ts-accuracy', 'ts-residual', 'ts-forecast', 'ts-compare'].forEach(function (id) { $id(id).disabled = true; });
     toast(TS_CONFIG.copy.tips.dataReady, 'info');
-    $id('ts-trend').disabled = false;
+    ['ts-trend', 'ts-stationarity', 'ts-acf', 'ts-decomp', 'ts-arima'].forEach(function (id) { $id(id).disabled = false; });
   }
 
   /* ---------- ③ 趋势提取（移动平均） ---------- */
@@ -337,6 +345,168 @@
     });
     state.built.cmp = true;
     toast(TS_CONFIG.copy.tips.compareDone, 'ok');
+  }
+
+  /* ---------- ⑧⑨⑩⑪ 深化：平稳性 / ACF·PACF / 季节分解 / ARIMA ---------- */
+  function mean(a) { return a.reduce(function (x, y) { return x + y; }, 0) / (a.length || 1); }
+  function diff(s, d) { var x = s.slice(); for (var k = 0; k < d; k++) { var y = []; for (var i = 1; i < x.length; i++) y.push(x[i] - x[i - 1]); x = y; } return x; }
+  // ADF 风格平稳性：对 y_t 回归 y_{t-1}（带常数），返回系数 t 值
+  function adfStat(s) {
+    if (s.length < 4) return { t: 0, stationary: false, crit: TS_CONFIG.methods.arima.adfCritical };
+    var ys = s.slice(1), xs = s.slice(0, -1), n = xs.length, sx = mean(xs), sy = mean(ys);
+    var sxx = 0, sxy = 0; for (var i = 0; i < n; i++) { sxx += (xs[i] - sx) * (xs[i] - sx); sxy += (xs[i] - sx) * (ys[i] - sy); }
+    var b = sxy / sxx, a = sy - b * sx;
+    var resid = ys.map(function (v, i) { return v - (a + b * xs[i]); });
+    var sse = resid.reduce(function (x, y) { return x + y * y; }, 0);
+    var se = Math.sqrt(sse / (n - 2)) / Math.sqrt(sxx);
+    var t = b / se, crit = TS_CONFIG.methods.arima.adfCritical;
+    return { t: t, crit: crit, stationary: t < crit };
+  }
+  // 自相关函数 ACF(k)
+  function acf(s, k) {
+    var m = mean(s), n = s.length, den = 0;
+    for (var i = 0; i < n; i++) den += (s[i] - m) * (s[i] - m);
+    if (den === 0 || n - k <= 0) return 0;
+    var num = 0; for (var i = 0; i < n - k; i++) num += (s[i] - m) * (s[i + k] - m);
+    return num / den;
+  }
+  // 偏自相关 PACF：Durbin-Levinson
+  function pacf(s, K) {
+    var phi = [], v = acf(s, 0), out = [];
+    for (var k = 1; k <= K; k++) {
+      var num = acf(s, k); for (var j = 1; j < k; j++) num -= phi[j - 1] * acf(s, k - j);
+      var den = v; for (var j = 1; j < k; j++) den -= phi[j - 1] * acf(s, k - j);
+      var phikk = den !== 0 ? num / den : 0, nw = phi.slice(); nw.push(phikk);
+      for (var j = 0; j < k - 1; j++) nw[j] = phi[j] - phikk * phi[k - 2 - j];
+      phi = nw; v = v * (1 - phikk * phikk); out.push(Math.max(-1, Math.min(1, phikk)));
+    }
+    return out;
+  }
+  // AR(p) Yule-Walker 系数
+  function arCoeffs(y, p) {
+    if (p <= 0) return [];
+    var r = []; for (var k = 0; k <= p; k++) r.push(acf(y, k));
+    var phi = [], v = r[0];
+    for (var k = 1; k <= p; k++) {
+      var num = r[k]; for (var j = 1; j < k; j++) num -= phi[j - 1] * r[k - j];
+      var den = v; for (var j = 1; j < k; j++) den -= phi[j - 1] * r[k - j];
+      var phikk = den !== 0 ? num / den : 0, nw = phi.slice(); nw.push(phikk);
+      for (var j = 0; j < k - 1; j++) nw[j] = phi[j] - phikk * phi[k - 2 - j];
+      phi = nw; v = v * (1 - phikk * phikk);
+    }
+    return phi;
+  }
+  // 乘法季节分解：趋势=去季节平滑；季节=原始/趋势；残差=原始/(趋势×季节)
+  function decompose(s, period) {
+    var n = s.length, m = mean(s);
+    var detr = s.map(function (v, i) { var lo = Math.max(0, i - Math.floor(period / 2)), hi = Math.min(n - 1, i + Math.floor(period / 2)), sum = 0, c = 0; for (var j = lo; j <= hi; j++) { sum += s[j]; c++; } return c ? v / (sum / c) : v; });
+    var idx = new Array(period).fill(0), cnt = new Array(period).fill(0);
+    for (var i = 0; i < n; i++) { var p = i % period; idx[p] += detr[i]; cnt[p]++; }
+    var avg = idx.map(function (v, i) { return cnt[i] ? v / cnt[i] : 1; });
+    var smean = avg.reduce(function (a, b) { return a + b; }, 0) / period;
+    var season = avg.map(function (v) { return v / smean; });
+    var seas = s.map(function (v, i) { return season[i % period]; });
+    var trend = s.map(function (v, i) { return v / seas[i]; });
+    var resid = s.map(function (v, i) { return v / (trend[i] * seas[i]); });
+    return { trend: trend, season: seas, resid: resid };
+  }
+  // 简化 ARIMA 预测（教学版）：去季节 × 差分 ARMA × 季节还原
+  function arimaForecast(s, p, d, q, period, h) {
+    var n = s.length, m = mean(s);
+    var detr = s.map(function (v, i) { var lo = Math.max(0, i - Math.floor(period / 2)), hi = Math.min(n - 1, i + Math.floor(period / 2)), sum = 0, c = 0; for (var j = lo; j <= hi; j++) { sum += s[j]; c++; } return c ? v / (sum / c) : v; });
+    var idx = new Array(period).fill(0), cnt = new Array(period).fill(0);
+    for (var i = 0; i < n; i++) { var pp = i % period; idx[pp] += detr[i]; cnt[pp]++; }
+    var avg = idx.map(function (v, i) { return cnt[i] ? v / cnt[i] : 1; });
+    var smean = avg.reduce(function (a, b) { return a + b; }, 0) / period;
+    var season = avg.map(function (v) { return v / smean; });
+    var seas = s.map(function (v, i) { return season[i % period]; });
+    var deseason = s.map(function (v, i) { return v / seas[i]; });
+    var y = diff(deseason, d);
+    if (y.length < Math.max(p, 1) + 2) { var base = mean(y.length ? y : deseason); var o = []; for (var i = 0; i < h; i++) o.push(Math.round(base * season[(n + i) % period])); return o; }
+    var phi = arCoeffs(y, p);
+    var resid = y.map(function (v, i) { if (i < p) return 0; var est = 0; for (var j = 1; j <= p; j++) est += phi[j - 1] * y[i - j]; return v - est; });
+    var yhat = y.slice(), rhat = resid.slice();
+    for (var i = 0; i < h; i++) {
+      var ix = yhat.length, ar = 0; for (var j = 1; j <= p; j++) ar += phi[j - 1] * yhat[ix - j];
+      var ma = 0, w = 0; for (var j = 1; j <= q; j++) { if (rhat.length - j >= 0) { ma += rhat[rhat.length - j] / j; w += 1 / j; } }
+      ma = w ? ma / w : 0; yhat.push(ar + ma); rhat.push(ma);
+    }
+    var fc = yhat.slice(y.length);
+    for (var dd = 0; dd < d; dd++) { var inv = [], last = deseason[deseason.length - 1]; for (var i = fc.length - 1; i >= 0; i--) { last = fc[i] + last; inv.unshift(last); } fc = inv; }
+    return fc.map(function (v, i) { return Math.round(v * season[(n + i) % period]); });
+  }
+  function buildStationarity() {
+    if (!state.hasData) return toast('请先输入或载入序列', 'error');
+    var s = state.series, st = adfStat(s), wrap = $id('ts-sta-wrap');
+    wrap.innerHTML = '<div class="sta-box">' +
+      '<div class="sta-row"><span>ADF 统计量 t</span><b>' + st.t.toFixed(2) + '</b></div>' +
+      '<div class="sta-row"><span>临界值</span><b>' + st.crit + '</b></div>' +
+      '<div class="sta-verdict ' + (st.stationary ? 'ok' : 'warn') + '">' + (st.stationary ? '✅ 序列平稳，可直接建模' : '⚠️ 存在单位根，建议先做 ' + TS_CONFIG.methods.arima.d + ' 阶差分') + '</div>' +
+      '</div>';
+    state.built.sta = true;
+    toast(st.stationary ? '序列平稳' : '建议差分后建模', 'info');
+  }
+  function buildAcf() {
+    if (!state.hasData) return toast('请先输入或载入序列', 'error');
+    var s = state.series, K = Math.min(20, Math.floor(s.length / 2)), ac = [], pac = pacf(s, K);
+    for (var k = 0; k <= K; k++) ac.push(acf(s, k));
+    var conf = 1.96 / Math.sqrt(s.length);
+    freshChart('ts-acf', 'ts-acf-wrap').setOption({
+      tooltip: { trigger: 'axis' }, grid: { left: 44, right: 14, top: 20, bottom: 28 },
+      xAxis: { type: 'category', data: ac.map(function (_, i) { return i; }), name: 'lag' },
+      yAxis: { type: 'value', name: 'ACF' },
+      series: [{ type: 'bar', data: ac.map(function (v) { return { value: +v.toFixed(3), itemStyle: { color: Math.abs(v) > conf ? '#5b6cff' : '#c7cce6' } }; }), barWidth: '60%' }]
+    });
+    freshChart('ts-pacf', 'ts-pacf-wrap').setOption({
+      tooltip: { trigger: 'axis' }, grid: { left: 44, right: 14, top: 20, bottom: 28 },
+      xAxis: { type: 'category', data: pac.map(function (_, i) { return i + 1; }), name: 'lag' },
+      yAxis: { type: 'value', name: 'PACF' },
+      series: [{ type: 'bar', data: pac.map(function (v) { return { value: +v.toFixed(3), itemStyle: { color: Math.abs(v) > conf ? '#e8833a' : '#c7cce6' } }; }), barWidth: '60%' }]
+    });
+    state.built.acf = true;
+    toast('ACF/PACF 已绘制（阴影区外为显著）', 'info');
+  }
+  function buildDecomp() {
+    if (!state.hasData) return toast('请先输入或载入序列', 'error');
+    var s = state.series, period = TS_CONFIG.methods.seasonal.period, d = decompose(s, period), n = s.length, x = [];
+    for (var i = 1; i <= n; i++) x.push(i);
+    freshChart('ts-decomp', 'ts-decomp-wrap').setOption({
+      tooltip: { trigger: 'axis' }, legend: { data: ['原始', '趋势', '季节', '残差'], top: 0 },
+      grid: { left: 50, right: 14, top: 30, bottom: 26 },
+      xAxis: { type: 'category', data: x, name: '期' },
+      yAxis: { type: 'value', scale: true },
+      series: [
+        { name: '原始', type: 'line', data: s, showSymbol: false, lineStyle: { width: 1 } },
+        { name: '趋势', type: 'line', data: d.trend.map(function (v) { return Math.round(v); }), showSymbol: false, lineStyle: { width: 2 } },
+        { name: '季节', type: 'line', data: d.season.map(function (v) { return +v.toFixed(3); }), showSymbol: false, lineStyle: { width: 1, type: 'dashed' } },
+        { name: '残差', type: 'line', data: d.resid.map(function (v) { return +v.toFixed(3); }), showSymbol: false, lineStyle: { width: 1, type: 'dotted' } }
+      ]
+    });
+    state.built.decomp = true;
+    toast('季节分解完成：原始 = 趋势 × 季节 × 残差', 'info');
+  }
+  function buildArima() {
+    if (!state.hasData) return toast('请先输入或载入序列', 'error');
+    var s = state.series, cfg = TS_CONFIG.methods.arima, h = 12, period = TS_CONFIG.methods.seasonal.period;
+    var fcA = arimaForecast(s, cfg.p, cfg.d, cfg.q, period, h);
+    var fcH = hwForecast(holtWintersFit(s, period), h);
+    var n = s.length, xall = []; for (var i = 1; i <= n + h; i++) xall.push(i);
+    var actual = s.concat(new Array(h).fill(null));
+    var predA = new Array(n - 1).fill(null).concat([s[n - 1]]).concat(fcA);
+    var predH = new Array(n - 1).fill(null).concat([s[n - 1]]).concat(fcH);
+    freshChart('ts-arima', 'ts-arima-wrap').setOption({
+      tooltip: { trigger: 'axis' }, legend: { data: ['实际', 'Holt-Winters', 'ARIMA'], top: 0 },
+      grid: { left: 56, right: 14, top: 30, bottom: 26 },
+      xAxis: { type: 'category', data: xall, name: '期' },
+      yAxis: { type: 'value', scale: true },
+      series: [
+        { name: '实际', type: 'line', data: actual, showSymbol: false, itemStyle: { color: '#5b6cff' } },
+        { name: 'Holt-Winters', type: 'line', data: predH, showSymbol: false, lineStyle: { width: 2 }, itemStyle: { color: '#7d5bd6' } },
+        { name: 'ARIMA', type: 'line', data: predA, showSymbol: false, lineStyle: { width: 2, type: 'dashed' }, itemStyle: { color: '#1f9e6b' } }
+      ]
+    });
+    state.arima = { forecast: fcA }; state.built.arima = true;
+    toast('ARIMA(' + cfg.p + ',' + cfg.d + ',' + cfg.q + ') + 季节指数 vs Holt-Winters（教学简化）', 'info');
   }
 
   /* ---------- 启动 ---------- */

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>配置在线编辑器 · RFM 客户分群</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="kit/kit.css" />
+</head>
+<body>
+  <header class="ed-header">
+    <div class="ed-header-inner">
+      <h1>🛠️ 配置在线编辑器</h1>
+      <a class="ed-back" href="rfm.html">← 返回主程序</a>
+    </div>
+    <nav class="ed-nav">
+      <a href="#sec-cust">① 客户清单</a>
+      <a href="#sec-score">② 打分参数</a>
+      <a href="#sec-seg">③ 分群标签</a>
+      <a href="#sec-pit">④ 误区词云</a>
+      <a href="#sec-copy">⑤ 文案</a>
+    </nav>
+  </header>
+
+  <main class="ed-main">
+    <p class="ed-intro">
+      <b>可视化编辑</b>全部参考数据，无需手改 JSON。点 <b>保存（本地）</b> 写入浏览器，与主程序共用同一存储，打开主程序即生效；
+      点 <b>导出 JSON</b> 下载 <code>rfm-config.json</code>，提交到仓库根目录后，所有人用主程序的「一键更新」即可同步。
+    </p>
+
+    <section id="sec-cust" class="ed-sec">
+      <h2>① 客户清单（姓名 / R 最近天数 / F 频次 / M 金额）</h2>
+      <p class="ed-sec-hint">每行一位客户。R 越小代表越近期消费，F/M 越大越好。可增删客户。</p>
+      <div id="ed-customers"></div>
+    </section>
+
+    <section id="sec-score" class="ed-sec">
+      <h2>② 打分参数</h2>
+      <p class="ed-sec-hint">五分位档数（默认 5）：把每位客户的 R/F/M 按分位切成 1–5 分，5 为最优。</p>
+      <div id="ed-scoring"></div>
+    </section>
+
+    <section id="sec-seg" class="ed-sec">
+      <h2>③ 8 类客户群标签 / 配色 / 说明</h2>
+      <p class="ed-sec-hint">标签须与分群规则对应（2³ 全组合：重要价值 / 重要挽留 / 重要发展 / 一般保持 / 潜力价值 / 一般发展 / 新客培育 / 一般挽留）。分群规则由主程序按 R/F/M 分计算。</p>
+      <div id="ed-segments"></div>
+    </section>
+
+    <section id="sec-pit" class="ed-sec">
+      <h2>④ 常见误区词云（关键词 + 权重）</h2>
+      <p class="ed-sec-hint">权重越大，误区词云中字体越大。</p>
+      <div id="ed-pitfalls"></div>
+    </section>
+
+    <section id="sec-copy" class="ed-sec">
+      <h2>⑤ 文案（欢迎语 / 提示 / 免责）</h2>
+      <div id="ed-copy"></div>
+    </section>
+
+    <section class="ed-sec">
+      <details class="ed-json-wrap">
+        <summary>👁️ 预览 / 校验 JSON</summary>
+        <pre id="ed-json"></pre>
+      </details>
+    </section>
+  </main>
+
+  <div class="ed-actionbar">
+    <button class="btn btn-sm btn-primary" id="ed-save">💾 保存</button>
+    <button class="btn btn-sm" id="ed-export">⬇️ 导出</button>
+    <button class="btn btn-sm" id="ed-import">⬆️ 导入</button>
+    <input type="file" id="ed-file" accept=".json,application/json" hidden />
+    <button class="btn btn-sm btn-warn" id="ed-reset">↺ 默认</button>
+    <span class="ed-status" id="ed-status"></span>
+  </div>
+
+  <script src="kit/config.js"></script>
+  <script src="kit/editor.js"></script>
+  <script src="js/rfm-config.js"></script>
+  <script src="js/rfm-editor.js"></script>
+</body>
+</html>

@@ -3,12 +3,16 @@
 > 《商数数据分析与应用基础》课程的**纯前端教学工具系列**，每个工具是一个独立的 H5 单页应用，共用一套「课程工具基座 (`kit/`)」。  
 > 全部逻辑在前端完成，**无后端、零费用**，可直接部署到 Cloudflare Pages 免费版。
 
+`index.html` 是**课程工具系列主页**（导航到各工具）；每个工具是独立的 H5 单页。
+
 当前已包含：
 
 | 工具 | 入口 | 编辑器 | 配置模板 | 说明 |
 |---|---|---|---|---|
-| ① 漏斗诊断助手 · 小数 | `index.html` | `editor.html` | `benchmark.json` | 六层漏斗 → 行业基准对标 → 智能方案 → 多方案模拟 |
-| ② 时间序列分析 · 小数 | `timeseries.html` | `ts-editor.html` | `ts-config.json` | 移动平均 / 指数平滑 / Holt-Winters 季节分解 / 精度对标 / 残差诊断 / 多步预测 |
+| ① 漏斗诊断助手 · 小数 | `funnel.html` | `editor.html` | `benchmark.json` | 六层漏斗 → 行业基准对标 → 智能方案 → 多方案模拟 |
+| ② 时间序列分析 · 小数 | `timeseries.html` | `ts-editor.html` | `ts-config.json` | 移动平均 / 指数平滑 / Holt-Winters 季节分解 / 精度对标 / 残差诊断 / 多步预测 / 平稳性·ACF·季节分解·ARIMA |
+| ③ RFM 客户分群 · 小数 | `rfm.html` | `rfm-editor.html` | `rfm-config.json` | R/F/M 五分位打分 → 8 类客户群（2³ 全组合）→ 散点 / 规模 / 价值对比 |
+| ④ ABC / 帕累托分析 · 小数 | `abc.html` | `abc-editor.html` | `abc-config.json` | 按销售额降序 → 累计占比 → A(≤80%)/B(≤95%)/C 分类 → 帕累托图 + 汇总 |
 
 ---
 
@@ -20,6 +24,8 @@
 - [课程工具基座 kit/](#课程工具基座-kit)
 - [工具一：漏斗诊断助手](#工具一漏斗诊断助手)
 - [工具二：时间序列分析](#工具二时间序列分析)
+- [工具三：RFM 客户分群](#工具三rfm-客户分群)
+- [工具四：ABC / 帕累托分析](#工具四abc--帕累托分析)
 - [如何更新参考数据](#如何更新参考数据)
 - [如何新增一个工具](#如何新增一个工具)
 - [注意事项](#注意事项)
@@ -30,23 +36,37 @@
 
 ```
 /workspace
-├── index.html                 # 工具① 入口（漏斗诊断助手）
+├── index.html                 # 课程工具系列主页（导航到各工具）
+├── funnel.html                # 工具① 入口（漏斗诊断助手）
 ├── editor.html                # 工具① 基准数据在线编辑器
 ├── timeseries.html            # 工具② 入口（时间序列分析）
 ├── ts-editor.html             # 工具② 配置在线编辑器
+├── rfm.html                   # 工具③ 入口（RFM 客户分群）
+├── rfm-editor.html            # 工具③ 在线编辑器
+├── abc.html                   # 工具④ 入口（ABC / 帕累托分析）
+├── abc-editor.html            # 工具④ 在线编辑器
 ├── benchmark.json             # 工具① 可编辑参考数据模板
 ├── ts-config.json             # 工具② 可编辑配置模板
+├── rfm-config.json            # 工具③ 可编辑配置模板
+├── abc-config.json            # 工具④ 可编辑配置模板
 ├── xiaoshu.html               # 工具① 单文件自包含版（全部内联，可离线打开）
 ├── css/style.css              # 移动端优先样式（主程序 + 编辑器共用）
+├── css/home.css               # 主页 / 工具卡片导航样式
 ├── css/editor.css             # 旧编辑器样式（已被 kit/kit.css 取代，保留兼容）
 ├── js/
 │   ├── data.js                # 工具① 漏斗数据层（品类基准/方案/词云/文案 + 配置引擎）
 │   ├── app.js                 # 工具① 交互逻辑（漏斗/对比/词云/方案/模拟）
 │   ├── funnel-editor.js       # 工具① 编辑器薄 glue（声明挂载点）
 │   ├── ts-config.js           # 工具② 时间序列配置层（案例生成/方法/精度/误区/文案）
-│   └── ts-app.js              # 工具② 交互逻辑（MA/ES/HW/MAPE/残差/预测）
-│   └── ts-editor.js           # 工具② 编辑器薄 glue
-├── kit/                       # 课程工具基座（两工具共用）
+│   ├── ts-app.js              # 工具② 交互逻辑（MA/ES/HW/MAPE/残差/预测/深化）
+│   ├── ts-editor.js           # 工具② 编辑器薄 glue
+│   ├── rfm-config.js          # 工具③ RFM 配置层（客户生成/分群/文案）
+│   ├── rfm-app.js             # 工具③ 交互逻辑（评分/分群/散点/规模/价值）
+│   ├── rfm-editor.js          # 工具③ 编辑器薄 glue
+│   ├── abc-config.js          # 工具④ ABC 配置层（商品生成/阈值/文案）
+│   ├── abc-app.js             # 工具④ 交互逻辑（排序/累计/帕累托/汇总）
+│   └── abc-editor.js          # 工具④ 编辑器薄 glue
+├── kit/                       # 课程工具基座（四工具共用）
 │   ├── config.js              # 通用 schema 驱动配置引擎（校验/合并/导入导出/localStorage）
 │   ├── editor.js              # 通用 schema 驱动在线编辑器（表单渲染/保存/导出/导入）
 │   ├── datamgr.js             # 通用数据管理面板（导出/导入/一键更新/恢复默认/在线编辑）
@@ -70,8 +90,11 @@
 cd /workspace
 python3 -m http.server 8099
 # 浏览器访问
-#   漏斗诊断助手：  http://localhost:8099/index.html
-#   时间序列分析：  http://localhost:8099/timeseries.html
+#   课程工具主页：    http://localhost:8099/index.html
+#   漏斗诊断助手：    http://localhost:8099/funnel.html
+#   时间序列分析：    http://localhost:8099/timeseries.html
+#   RFM 客户分群：    http://localhost:8099/rfm.html
+#   ABC / 帕累托分析： http://localhost:8099/abc.html
 ```
 
 或直接用 VS Code 的 Live Server、Node 的 `npx serve` 等。
@@ -118,7 +141,7 @@ wrangler pages deploy . --project-name=xs-ld
 
 ## 课程工具基座 kit/
 
-两个工具**不重复造轮子**：配置解析、在线编辑、数据管理三块逻辑被抽成基座，放在 `kit/`，由各自配置层（漏斗 `js/data.js`、时间序列 `js/ts-config.js`）通过少量声明接入。
+四个工具**不重复造轮子**：配置解析、在线编辑、数据管理三块逻辑被抽成基座，放在 `kit/`，由各自配置层（漏斗 `js/data.js`、时间序列 `js/ts-config.js`、RFM `js/rfm-config.js`、ABC `js/abc-config.js`）通过少量声明接入。
 
 | 文件 | 职责 | 关键 API |
 |---|---|---|
@@ -175,6 +198,60 @@ wrangler pages deploy . --project-name=xs-ld
 | ⑦ 多方法预测对比 | 三种方法预测线并排，最优解高亮 | 多步外推 |
 
 > **教学亮点**：直观对比「窗口过大滞后」「α 过小迟钝」「忽略季节突变」「过度拟合噪声」「训练/测试集混淆」「外推过远失效」六大常见误区（词云权重可视化）。
+>
+> **深化（⑧–⑪）**：在 7 步基础上新增平稳性检验（ADF 风格 t 统计量）、自相关 ACF / 偏自相关 PACF（95% 置信带）、乘法季节分解（趋势/季节/残差三线）、以及 ARIMA 预测（去季节化 × 差分 × ARMA × 季节还原），与 Holt-Winters 对比。
+
+---
+
+## 工具三：RFM 客户分群
+
+入口 `rfm.html`。输入客户清单（姓名 / 最近消费天数 R / 消费频次 F / 消费金额 M），依次完成 6 步分析。
+
+### 功能对照
+
+| 步骤 | 功能 | 方法 |
+|---|---|---|
+| ① 客户数据 | 粘贴或载入内置示例客户（30 位，确定性生成） | — |
+| ② RFM 评分 | 对 R/F/M 各按五分位打 1–5 分（R 越小越优，F/M 越大越优） | 分位等分（档数可配置） |
+| ③ 客户分群散点 | 频次 × 金额散点，按 8 类客户群着色，点大小随「最近程度」变化 | ECharts scatter |
+| ④ 分群规模 | 各客户群客户数柱状图 | ECharts bar |
+| ⑤ 分群价值 | 各客户群总金额 + 客均金额（双轴） | ECharts bar + line |
+| ⑥ 误区词云 | RFM 常见误区可视化 | ECharts wordcloud |
+
+**8 类客户群（R/F/M 各取 高≥4 / 低≤3 的 2³ 全组合，互斥且必覆盖）**
+
+| R | F | M | 分群 | 运营建议 |
+|---|---|---|---|---|
+| 高 | 高 | 高 | 重要价值客户 | 优先维系 |
+| 低 | 高 | 高 | 重要挽留客户 | 重点挽回 |
+| 高 | 低 | 高 | 重要发展客户 | 提升复购频次 |
+| 低 | 低 | 高 | 一般保持客户 | 常规维系 |
+| 高 | 高 | 低 | 潜力价值客户 | 提升客单价 |
+| 低 | 高 | 低 | 一般发展客户 | 培育 |
+| 高 | 低 | 低 | 新客培育客户 | 培育期 |
+| 低 | 低 | 低 | 一般挽留客户 | 关注维护成本 |
+
+> **教学亮点**：直观对比「只看金额忽略频次」「R/F/M 权重一刀切」「阈值生搬硬套」「样本量太小失真」「忽视流失预警」「分群后无运营动作」六大常见误区。
+
+---
+
+## 工具四：ABC / 帕累托分析
+
+入口 `abc.html`。输入商品清单（名称 / 销售额），依次完成 5 步分析。
+
+### 功能对照
+
+| 步骤 | 功能 | 方法 |
+|---|---|---|
+| ① 商品数据 | 粘贴或载入内置示例商品（20 个，长尾分布） | — |
+| ② 排序与累计 | 按销售额降序，计算累计占比并预分类 | 降序 + 累计求和 |
+| ③ 帕累托图 | 柱（销售额，按 A/B/C 着色）+ 累计占比折线 + A/B 分界带与阈值线 | ECharts bar + line + markArea/markLine |
+| ④ ABC 分类汇总 | 每类商品数 / 数量占比 / 销售额 / 金额占比 | 聚合统计 |
+| ⑤ 误区词云 | ABC 常见误区可视化 | ECharts wordcloud |
+
+**分类规则**：累计占比 ≤ `thresholds.a`(默认 80%) 为 A 类，≤ `thresholds.b`(默认 95%) 为 B 类，其余为 C 类。阈值可在编辑器或配置模板中调整。
+
+> **教学亮点**：直观对比「只看销售额忽略利润」「阈值生搬 80/20」「忽视 C 类潜在爆款」「用数量代替金额」「分类后无差异运营」「样本期太短失真」六大常见误区。
 
 ---
 
@@ -184,7 +261,7 @@ wrangler pages deploy . --project-name=xs-ld
 
 ### 方式 A：一键更新（推荐，适合 Cloudflare Pages）
 
-1. 修改对应模板文件（漏斗 `benchmark.json` / 时间序列 `ts-config.json`）。
+1. 修改对应模板文件（漏斗 `benchmark.json` / 时间序列 `ts-config.json` / RFM `rfm-config.json` / ABC `abc-config.json`）。
 2. 提交到仓库根目录（或覆盖到 Pages 根目录）。
 3. 打开网页，展开「🛠️ 配置数据管理」，点击 **🔄 一键更新**（默认读取 `./benchmark.json` 或 `./ts-config.json`）。
 4. 数据立即生效并持久化到浏览器 `localStorage`，刷新后仍保留。
@@ -209,7 +286,7 @@ wrangler pages deploy . --project-name=xs-ld
 4. **↺ 默认**：一键载入内置默认（未保存不会覆盖本地）。
 5. 底部「👁️ 预览 / 校验 JSON」实时显示当前配置，格式异常会标红。
 
-> 编辑器与主程序共用同一存储键（漏斗 `xiaoshu.config.v1` / 时间序列 `ts.config.v1`），「在编辑器保存」等同于「在主程序导入同一份配置」，二者随时互通。
+> 编辑器与主程序共用同一存储键（漏斗 `xiaoshu.config.v1` / 时间序列 `ts.config.v1` / RFM `rfm.config.v1` / ABC `abc.config.v1`），「在编辑器保存」等同于「在主程序导入同一份配置」，二者随时互通。
 
 ### 方式 D：恢复内置默认
 
@@ -221,7 +298,7 @@ wrangler pages deploy . --project-name=xs-ld
 
 ## 如何新增一个工具
 
-以「在 `kit/` 基座上新增第三个课程工具」为例，标准步骤：
+以「在 `kit/` 基座上新增一个课程工具」为例，标准步骤：
 
 1. **配置层**（如 `js/xxx-config.js`）
    - 定义 `XXX_SCHEMA_VERSION` / `XXX_STORAGE_KEY`。
@@ -254,7 +331,9 @@ wrangler pages deploy . --project-name=xs-ld
 4. **漏斗微课锁定**：当品类为「美妆护肤」且数据完全等于默认案例时，方案与模拟结果会显示「已锁定」标签；该案例数据可通过 `benchmark.json` 更新，但锁定行为不变。
 5. **时间序列序列要求**：至少 6 期有效数值；Holt-Winters 需序列长度 ≥ 2 倍季节周期（默认 12）才能稳定分解季节。
 6. **预测仅供参考**：基于历史规律与模型假设，受突发事件影响大，请谨慎外推（免责声明常驻）。
-7. **免费额度**：Cloudflare Pages 免费版包含无限请求、每月 500 次构建（Git 连接）、100 GB 带宽，静态站点完全够用。
+7. **RFM 分群**：R/F/M 按五分位打分（档数 `scoring.levels` 可配置，默认 5）；分群为 R/F/M 各取高(≥4)/低(≤3) 的 2³ 全组合，互斥且必覆盖；当客户量很小时某些群可能为空（属正常）。
+8. **ABC 分类**：累计占比阈值 `thresholds.a`(默认 80%) / `thresholds.b`(默认 95%) 为经验值，可结合品类特性调整；分类基于历史销售额，未考虑利润与周转，结论仅供参考。
+9. **免费额度**：Cloudflare Pages 免费版包含无限请求、每月 500 次构建（Git 连接）、100 GB 带宽，静态站点完全够用。
 
 ---
 
@@ -273,4 +352,4 @@ wrangler pages deploy . --project-name=xs-ld
 
 ---
 
-*版本：2.0（课程工具系列）| 更新：2026-08-12 | 基座：kit/ 通用配置引擎 + 在线编辑器 + 数据管理面板*
+*版本：3.0（课程工具系列 · 4 工具）| 更新：2026-08-12 | 基座：kit/ 通用配置引擎 + 在线编辑器 + 数据管理面板*

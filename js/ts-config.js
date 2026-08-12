@@ -52,7 +52,8 @@ const TS_DEFAULTS = {
   methods: {
     movingAverage: { defaultWindows: [3, 5, 7], recommend: 5 },
     expSmoothing: { alphaRange: [0.1, 0.9], recommend: 0.3 },
-    seasonal: { period: 12, type: 'multiplicative', label: 'Holt-Winters 乘法季节模型' }
+    seasonal: { period: 12, type: 'multiplicative', label: 'Holt-Winters 乘法季节模型' },
+    arima: { p: 1, d: 1, q: 1, P: 0, D: 1, Q: 1, adfCritical: -2.86 }
   },
   accuracyBenchmark: { mape: { good: 10, mid: 20 } },
   pitfalls: [
@@ -91,6 +92,15 @@ const TS_SCHEMA = {
       { sub: 'seasonal', type: 'object', fields: [
         { sub: 'period', type: 'number', label: '季节周期' },
         { sub: 'type', type: 'string', label: '分解类型' }
+      ] },
+      { sub: 'arima', type: 'object', fields: [
+        { sub: 'p', type: 'number', label: 'AR 阶 p' },
+        { sub: 'd', type: 'number', label: '差分阶 d' },
+        { sub: 'q', type: 'number', label: 'MA 阶 q' },
+        { sub: 'P', type: 'number', label: '季节AR P' },
+        { sub: 'D', type: 'number', label: '季节差分 D' },
+        { sub: 'Q', type: 'number', label: '季节MA Q' },
+        { sub: 'adfCritical', type: 'number', label: 'ADF临界值' }
       ] }
     ] },
     { path: 'accuracyBenchmark', kind: 'object', fields: [

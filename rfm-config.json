@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-08-12",
+  "source": "数据管理导出",
+  "customers": [
+    {
+      "name": "张伟",
+      "recency": 32,
+      "frequency": 33,
+      "monetary": 4584
+    },
+    {
+      "name": "王芳",
+      "recency": 27,
+      "frequency": 38,
+      "monetary": 5397
+    },
+    {
+      "name": "李娜",
+      "recency": 11,
+      "frequency": 21,
+      "monetary": 7247
+    },
+    {
+      "name": "赵敏",
+      "recency": 47,
+      "frequency": 11,
+      "monetary": 3307
+    },
+    {
+      "name": "陈静",
+      "recency": 56,
+      "frequency": 19,
+      "monetary": 1998
+    },
+    {
+      "name": "刘丽",
+      "recency": 100,
+      "frequency": 1,
+      "monetary": 208
+    },
+    {
+      "name": "杨强",
+      "recency": 106,
+      "frequency": 32,
+      "monetary": 3872
+    },
+    {
+      "name": "黄磊",
+      "recency": 24,
+      "frequency": 5,
+      "monetary": 3731
+    },
+    {
+      "name": "周军",
+      "recency": 43,
+      "frequency": 22,
+      "monetary": 6124
+    },
+    {
+      "name": "吴洋",
+      "recency": 2,
+      "frequency": 7,
+      "monetary": 2975
+    },
+    {
+      "name": "徐勇",
+      "recency": 98,
+      "frequency": 12,
+      "monetary": 4358
+    },
+    {
+      "name": "孙艳",
+      "recency": 78,
+      "frequency": 36,
+      "monetary": 2082
+    },
+    {
+      "name": "马杰",
+      "recency": 45,
+      "frequency": 25,
+      "monetary": 705
+    },
+    {
+      "name": "朱娟",
+      "recency": 109,
+      "frequency": 14,
+      "monetary": 2924
+    },
+    {
+      "name": "胡涛",
+      "recency": 12,
+      "frequency": 6,
+      "monetary": 3988
+    },
+    {
+      "name": "林明",
+      "recency": 54,
+      "frequency": 4,
+      "monetary": 7534
+    },
+    {
+      "name": "郭超",
+      "recency": 34,
+      "frequency": 3,
+      "monetary": 7653
+    },
+    {
+      "name": "何霞",
+      "recency": 16,
+      "frequency": 18,
+      "monetary": 3522
+    },
+    {
+      "name": "高平",
+      "recency": 36,
+      "frequency": 11,
+      "monetary": 2690
+    },
+    {
+      "name": "罗刚",
+      "recency": 24,
+      "frequency": 30,
+      "monetary": 4066
+    },
+    {
+      "name": "郑桂英",
+      "recency": 40,
+      "frequency": 16,
+      "monetary": 6219
+    },
+    {
+      "name": "梁建华",
+      "recency": 66,
+      "frequency": 31,
+      "monetary": 5110
+    },
+    {
+      "name": "谢志强",
+      "recency": 13,
+      "frequency": 32,
+      "monetary": 638
+    },
+    {
+      "name": "宋秀兰",
+      "recency": 20,
+      "frequency": 8,
+      "monetary": 6397
+    },
+    {
+      "name": "唐海燕",
+      "recency": 33,
+      "frequency": 15,
+      "monetary": 7173
+    },
+    {
+      "name": "许文",
+      "recency": 85,
+      "frequency": 21,
+      "monetary": 4426
+    },
+    {
+      "name": "韩倩",
+      "recency": 57,
+      "frequency": 13,
+      "monetary": 2114
+    },
+    {
+      "name": "冯鹏",
+      "recency": 30,
+      "frequency": 30,
+      "monetary": 6556
+    },
+    {
+      "name": "邓梅",
+      "recency": 44,
+      "frequency": 1,
+      "monetary": 7203
+    },
+    {
+      "name": "曹宇",
+      "recency": 61,
+      "frequency": 14,
+      "monetary": 2793
+    }
+  ],
+  "scoring": {
+    "levels": 5
+  },
+  "segments": [
+    {
+      "label": "重要价值客户",
+      "color": "#5b6cff",
+      "desc": "R高 F高 M高：最近购买、频次与金额都高，最优质客户，优先维系"
+    },
+    {
+      "label": "重要挽留客户",
+      "color": "#e0a300",
+      "desc": "R低 F高 M高：高价值但近期流失，重点挽回对象"
+    },
+    {
+      "label": "重要发展客户",
+      "color": "#2bb3c0",
+      "desc": "R高 F低 M高：近期活跃、金额高但频次低，提升复购频次"
+    },
+    {
+      "label": "一般保持客户",
+      "color": "#9aa0c4",
+      "desc": "R低 F低 M高：金额尚可、其余偏弱，常规维系"
+    },
+    {
+      "label": "潜力价值客户",
+      "color": "#1faa6b",
+      "desc": "R高 F高 M低：活跃高频但客单低，提升客单价"
+    },
+    {
+      "label": "一般发展客户",
+      "color": "#c0c4d8",
+      "desc": "R低 F高 M低：频次高但近期冷、客单低，培育期"
+    },
+    {
+      "label": "新客培育客户",
+      "color": "#7d5bd6",
+      "desc": "R高 F低 M低：新近但各项浅，处于培育阶段"
+    },
+    {
+      "label": "一般挽留客户",
+      "color": "#b0b4c8",
+      "desc": "R低 F低 M低：全面低迷，关注维护成本"
+    }
+  ],
+  "copy": {
+    "welcome": "你好，我是小数 👥 一位 RFM 客户分群助手。RFM 用「最近一次消费 R、消费频次 F、消费金额 M」给客户打分，再聚成 8 类，帮你定位谁该重点维护、谁该挽回。",
+    "tips": {
+      "enter": "可载入内置示例客户，或在下方粘贴你自己的客户数据（格式：姓名,最近天数,频次,金额）",
+      "dataReady": "客户数据已就绪，点击「RFM 评分」按五分位给每位客户打 1–5 分",
+      "scored": "评分完成！R/F/M 各 1–5 分（5 最优）。下一步按规则聚成 8 类客户群",
+      "segmented": "分群完成，下方按价值与规模展示了 8 类客户群",
+      "scaleDone": "分群规模已统计，柱形颜色对应各客户群",
+      "valueDone": "分群价值已统计，可对比各群的金额贡献"
+    },
+    "disclaimer": "⚠️ RFM 分群基于历史交易，仅反映过去行为；分位阈值与分群规则可结合业务调整，结论仅供参考。"
+  },
+  "pitfalls": [
+    [
+      "只看金额忽略频次",
+      28
+    ],
+    [
+      "R/F/M 权重一刀切",
+      24
+    ],
+    [
+      "阈值生搬硬套",
+      20
+    ],
+    [
+      "样本量太小失真",
+      16
+    ],
+    [
+      "忽视流失预警",
+      14
+    ],
+    [
+      "分群后无运营动作",
+      12
+    ]
+  ]
+}
