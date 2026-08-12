@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b6cff" />
+  <title>漏斗诊断助手 · 小数</title>
+  <meta name="description" content="电商数据分析教学工具：输入六层漏斗数据，生成漏斗图、行业基准对标、智能推荐方案与四方案模拟对比。纯前端，无需后端。" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="phone">
+    <!-- 顶部标题栏 -->
+    <header class="app-bar">
+      <div class="app-bar-title">🧠 漏斗诊断助手 · 小数</div>
+      <div class="app-bar-sub">电商运营教学验证工具 · 教师主导</div>
+    </header>
+
+    <main class="screen">
+      <!-- 欢迎语 -->
+      <section class="welcome" id="welcome"></section>
+
+      <!-- 基准数据管理（导入 / 导出 / 一键更新 / 恢复默认） -->
+      <details class="data-mgr" id="data-mgr">
+        <summary class="data-mgr-sum">
+          <span>🛠️ 基准数据管理</span>
+          <span class="src-badge" id="src-badge">内置默认</span>
+        </summary>
+        <div class="data-mgr-body">
+          <p class="dm-hint">基准、方案、词云等参考数据均可编辑。修改后导出 JSON，下次可一键更新，保持数据最新。</p>
+          <div class="dm-actions">
+            <button class="btn btn-sm" id="btn-export">⬇️ 导出当前JSON</button>
+            <button class="btn btn-sm" id="btn-import">⬆️ 导入JSON文件</button>
+            <input type="file" id="file-import" accept=".json,application/json" hidden />
+            <button class="btn btn-sm btn-warn" id="btn-reset-config">↺ 恢复内置默认</button>
+          </div>
+          <div class="dm-update">
+            <label class="dm-url-label" for="update-url">一键更新地址</label>
+            <div class="dm-url-row">
+              <input type="text" id="update-url" class="dm-url" placeholder="./benchmark.json" value="./benchmark.json" inputmode="url" />
+              <button class="btn btn-sm btn-primary" id="btn-fetch-update">🔄 一键更新</button>
+            </div>
+          </div>
+          <p class="dm-note" id="dm-note"></p>
+        </div>
+      </details>
+
+      <!-- 品类选择 -->
+      <section class="block">
+        <div class="block-title">① 选择品类</div>
+        <div class="cat-chips" id="cat-chips"></div>
+        <p class="bench-logic" id="bench-logic"></p>
+        <span class="lock-badge" id="lock-badge">✦ 微课案例已锁定</span>
+      </section>
+
+      <!-- 数据输入 -->
+      <section class="block">
+        <div class="block-title">② 输入六层漏斗数据</div>
+        <div class="input-grid">
+          <label class="field"><span>曝光量</span><input id="in-exposure" type="number" inputmode="numeric" placeholder="100000" /></label>
+          <label class="field"><span>点击量</span><input id="in-click" type="number" inputmode="numeric" placeholder="30000" /></label>
+          <label class="field"><span>加购量</span><input id="in-cart" type="number" inputmode="numeric" placeholder="9000" /></label>
+          <label class="field"><span>下单量</span><input id="in-order" type="number" inputmode="numeric" placeholder="3600" /></label>
+          <label class="field"><span>支付量</span><input id="in-pay" type="number" inputmode="numeric" placeholder="2700" /></label>
+          <label class="field"><span>完成交易</span><input id="in-finish" type="number" inputmode="numeric" placeholder="2484" /></label>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-course">载入微课案例</button>
+          <button class="btn btn-ghost" id="btn-reset">清空</button>
+        </div>
+      </section>
+
+      <!-- 漏斗图 -->
+      <section class="block">
+        <div class="block-title">③ 生成漏斗图</div>
+        <button class="btn btn-primary" id="btn-funnel">生成漏斗图</button>
+        <div class="funnel-wrap" id="funnel-wrap"></div>
+        <div class="funnel-overall" id="funnel-overall"></div>
+      </section>
+
+      <!-- 行业基准对标（含漏斗图对比） -->
+      <section class="block">
+        <div class="block-title">④ 行业基准对标</div>
+        <button class="btn btn-primary" id="btn-bench">行业基准对标</button>
+        <div class="benchmark-wrap" id="benchmark-wrap"></div>
+      </section>
+
+      <!-- 下钻诊断 · 痛点词云 -->
+      <section class="block">
+        <div class="block-title">⑤ 下钻诊断 · 痛点词云</div>
+        <button class="btn btn-primary" id="btn-drill">下钻诊断</button>
+        <div class="drill-wrap" id="drill-wrap"></div>
+      </section>
+
+      <!-- 智能推荐方案 -->
+      <section class="block">
+        <div class="block-title">⑥ 智能推荐方案</div>
+        <button class="btn btn-primary" id="btn-plans">智能推荐方案</button>
+        <div class="plans-wrap" id="plans-wrap"></div>
+      </section>
+
+      <!-- 一键模拟对比 -->
+      <section class="block">
+        <div class="block-title">⑦ 一键模拟对比</div>
+        <button class="btn btn-primary" id="btn-compare">一键模拟对比</button>
+        <div class="compare-wrap" id="compare-wrap"></div>
+      </section>
+
+      <!-- 免责声明 -->
+      <footer class="disclaimer" id="disclaimer"></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/echarts.min.js"></script>
+  <script src="vendor/echarts-wordcloud.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
