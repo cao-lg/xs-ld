@@ -17,8 +17,8 @@
   var METRICS_CONFIG = loadInitialConfig();
 
   var state = {
-    indicators: [], funnel: [], trends: [], months: [], hasData: false,
-    built: { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false }
+    indicators: [], funnel: [], trends: [], months: [], hasData: false, activeCat: '全部',
+    built: { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false, knowledge: false }
   };
 
   function $id(id) { return document.getElementById(id); }
@@ -31,6 +31,7 @@
     }
     return Math.round(v).toLocaleString('zh-CN') + ' ' + unit;
   }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function toast(msg, type) {
     var box = $id('toast'); if (!box) return;
     box.textContent = msg; box.className = 'toast show ' + (type || '');
@@ -42,15 +43,25 @@
   function freshChart(id, domId) { disposeChart(id); return registerChart(id, echarts.init($id(domId))); }
   function resetAnalysis() {
     Object.keys(charts).forEach(disposeChart);
-    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap']
+    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap', 'metrics-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false };
+    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false, knowledge: false };
+    state.activeCat = '全部';
     state.indicators = []; state.funnel = []; state.trends = []; state.months = []; state.hasData = false;
-    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv']
+    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv', 'metrics-knowledge']
       .forEach(function (id) { $id(id).disabled = true; });
   }
 
   function worseWhenHigh(name) { return name === '退换货率'; }
+
+  /* 分类元数据（配色 / 教学说明），由配置驱动，编辑器可改 */
+  function catMeta(name) {
+    var cs = METRICS_CONFIG.categories || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i].name === name) return cs[i];
+    return null;
+  }
+  function colorOfCat(cat) { var m = catMeta(cat); return m && m.color ? m.color : '#9aa0c4'; }
+  function descOfCat(cat) { var m = catMeta(cat); return m && m.desc ? m.desc : ''; }
 
   /* ---------- 数据 ---------- */
   function loadBuiltin() {
@@ -79,38 +90,68 @@
     });
     state.months = (METRICS_CONFIG.months || '').split(/[,，\s]+/).map(function (x) { return x.trim(); }).filter(Boolean);
     state.hasData = true;
-    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false };
-    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap']
+    state.built = { overview: false, funnel: false, ratio: false, radar: false, cloud: false, trend: false, gmv: false, knowledge: false };
+    state.activeCat = '全部';
+    ['metrics-overview-wrap', 'metrics-funnel-wrap', 'metrics-ratio-wrap', 'metrics-radar-wrap', 'metrics-cloud-wrap', 'metrics-trend-wrap', 'metrics-gmv-wrap', 'metrics-knowledge-wrap']
       .forEach(function (id) { var e = $id(id); if (e) e.innerHTML = ''; });
-    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv']
+    ['metrics-overview', 'metrics-funnel', 'metrics-ratio', 'metrics-radar', 'metrics-cloud', 'metrics-trend', 'metrics-gmv', 'metrics-knowledge']
       .forEach(function (id) { $id(id).disabled = true; });
     toast(METRICS_CONFIG.copy.tips.dataReady + '（共 ' + list.length + ' 项）', 'info');
     $id('metrics-overview').disabled = false; $id('metrics-funnel').disabled = false; $id('metrics-trend').disabled = false;
   }
 
-  /* ---------- ② 指标概览 ---------- */
-  function buildOverview() {
-    if (!state.hasData) return toast('请先应用指标数据', 'error');
+  /* ---------- ② 指标概览（按分类标签逐类学） ---------- */
+  function cardHtml(d, cat) {
+    var better = worseWhenHigh(d.name) ? d.value <= d.benchmark : d.value >= d.benchmark;
+    var delta = (0 < Math.abs(d.value) && Math.abs(d.value) < 1 && Math.abs(d.benchmark) < 1)
+      ? ((d.value - d.benchmark) * 100).toFixed(1) + 'pp' : Math.round(d.value - d.benchmark).toLocaleString('zh-CN');
+    var r = Math.max(d.benchmark, 1e-9);
+    var pctCur = Math.max(2, Math.min(100, d.value / r * 50));
+    var col = colorOfCat(cat);
+    return '<div class="mk-card"><div class="mk-name">' + d.name + '</div>' +
+      '<div class="mk-val">' + fmtVal(d.value, d.unit) + '</div>' +
+      '<div class="mk-bar"><span class="mk-cur" style="width:' + pctCur + '%;background:' + col + '"></span><span class="mk-bm" style="left:50%"></span></div>' +
+      '<div class="mk-meta"><span class="mk-bench">基准 ' + fmtVal(d.benchmark, d.unit) + '</span>' +
+      '<span class="mk-delta ' + (better ? 'up' : 'down') + '">' + (better ? '▲' : '▼') + ' ' + delta + '</span></div></div>';
+  }
+  function catSectionHtml(cat, items) {
+    var col = colorOfCat(cat);
+    var cards = items.map(function (d) { return cardHtml(d, cat); }).join('');
+    var desc = descOfCat(cat);
+    return '<div class="mk-group">' +
+      '<div class="mk-group-title" style="color:' + col + '">' + esc(cat) + ' 类指标</div>' +
+      (desc ? '<div class="mk-cat-desc" style="border-left-color:' + col + '">' + esc(desc) + '</div>' : '') +
+      '<div class="mk-cards">' + cards + '</div></div>';
+  }
+  function presentCats() {
     var groups = {};
     state.indicators.forEach(function (d) { (groups[d.category] = groups[d.category] || []).push(d); });
-    var colorOf = { '流量': '#5b6cff', '转化': '#1faa6b', '客单价': '#e0a300', '留存': '#2bb3c0', '营销': '#7d5bd6', '其他': '#9aa0c4' };
-    var html = Object.keys(groups).map(function (cat) {
-      var cards = groups[cat].map(function (d) {
-        var better = worseWhenHigh(d.name) ? d.value <= d.benchmark : d.value >= d.benchmark;
-        var delta = (0 < Math.abs(d.value) && Math.abs(d.value) < 1 && Math.abs(d.benchmark) < 1)
-          ? ((d.value - d.benchmark) * 100).toFixed(1) + 'pp' : Math.round(d.value - d.benchmark).toLocaleString('zh-CN');
-        var r = Math.max(d.benchmark, 1e-9);
-        var pctCur = Math.max(2, Math.min(100, d.value / r * 50));
-        var pctBm = 50;
-        return '<div class="mk-card"><div class="mk-name">' + d.name + '</div>' +
-          '<div class="mk-val">' + fmtVal(d.value, d.unit) + '</div>' +
-          '<div class="mk-bar"><span class="mk-cur" style="width:' + pctCur + '%;background:' + (colorOf[cat] || '#5b6cff') + '"></span><span class="mk-bm" style="left:' + pctBm + '%"></span></div>' +
-          '<div class="mk-meta"><span class="mk-bench">基准 ' + fmtVal(d.benchmark, d.unit) + '</span>' +
-          '<span class="mk-delta ' + (better ? 'up' : 'down') + '">' + (better ? '▲' : '▼') + ' ' + delta + '</span></div></div>';
-      }).join('');
-      return '<div class="mk-group"><div class="mk-group-title" style="color:' + (colorOf[cat] || '#5b6cff') + '">' + cat + '</div><div class="mk-cards">' + cards + '</div></div>';
+    var cats = (METRICS_CONFIG.categories || []).map(function (c) { return c.name; })
+      .filter(function (n) { return groups[n]; });
+    Object.keys(groups).forEach(function (n) { if (cats.indexOf(n) < 0) cats.push(n); });
+    return { groups: groups, cats: cats };
+  }
+  function renderOverviewBody() {
+    var p = presentCats();
+    var html;
+    if (state.activeCat === '全部') {
+      html = p.cats.map(function (cat) { return catSectionHtml(cat, p.groups[cat]); }).join('');
+    } else {
+      html = p.groups[state.activeCat] ? catSectionHtml(state.activeCat, p.groups[state.activeCat]) : '<p class="mk-note">该分类暂无指标。</p>';
+    }
+    var body = $id('metrics-overview-body'); if (body) body.innerHTML = html;
+  }
+  function buildOverview() {
+    if (!state.hasData) return toast('请先应用指标数据', 'error');
+    var p = presentCats();
+    var tabs = ['全部'].concat(p.cats).map(function (cat) {
+      return '<button class="mk-tab' + (cat === state.activeCat ? ' active' : '') + '" data-cat="' + esc(cat) + '">' + esc(cat) + '</button>';
     }).join('');
-    $id('metrics-overview-wrap').innerHTML = html;
+    $id('metrics-overview-wrap').innerHTML = '<div class="mk-tabs">' + tabs + '</div><div id="metrics-overview-body"></div>';
+    Array.prototype.forEach.call($id('metrics-overview-wrap').querySelectorAll('.mk-tab'), function (btn) {
+      btn.addEventListener('click', function () { state.activeCat = btn.getAttribute('data-cat'); buildOverview(); });
+    });
+    renderOverviewBody();
     state.built.overview = true;
     toast(METRICS_CONFIG.copy.tips.overviewDone, 'ok');
     $id('metrics-ratio').disabled = false; $id('metrics-radar').disabled = false; $id('metrics-cloud').disabled = false;
@@ -316,6 +357,18 @@
     toast('常见误区已生成', 'info');
   }
 
+  /* ---------- ⑨ 课堂知识点注解 ---------- */
+  function buildKnowledge() {
+    var list = (METRICS_CONFIG.knowledge || []).filter(function (k) { return k && k.title; });
+    if (!list.length) return toast('暂无课堂知识点', 'warn');
+    var html = list.map(function (k, i) {
+      return '<div class="kp-card"><div class="kp-title">' + (i + 1) + '. ' + esc(k.title) + '</div><div class="kp-body">' + esc(k.body) + '</div></div>';
+    }).join('');
+    $id('metrics-knowledge-wrap').innerHTML = html;
+    state.built.knowledge = true;
+    toast('已展开 ' + list.length + ' 条课堂知识点', 'ok');
+  }
+
   /* ---------- UI ---------- */
   function setWelcome() { var w = $id('metrics-welcome'); if (w) w.textContent = METRICS_CONFIG.copy.welcome; }
   function setDisclaimer() { var d = $id('metrics-disclaimer'); if (d) d.textContent = METRICS_CONFIG.copy.disclaimer; }
@@ -330,6 +383,7 @@
     $id('metrics-trend').addEventListener('click', buildTrend);
     $id('metrics-gmv').addEventListener('click', buildGmv);
     $id('metrics-cloud').addEventListener('click', buildCloud);
+    $id('metrics-knowledge').addEventListener('click', buildKnowledge);
     window.addEventListener('resize', function () { Object.keys(charts).forEach(function (id) { if (charts[id]) charts[id].resize(); }); });
     CourseKit.mountDataManager({
       engine: ENGINE,

@@ -43,6 +43,17 @@
     .mk-table .rk-no td:last-child { color: #e5484d; font-weight: 700; }
     .app-bar-back { display: inline-block; font-size: 13px; color: #fff; opacity: .92; text-decoration: none; margin-bottom: 6px; }
     .app-bar-back:hover { opacity: 1; }
+    /* 分类标签栏（按分类逐类学） */
+    .mk-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+    .mk-tab { border: 1px solid #d8dbe8; background: #fff; color: var(--ink-soft); border-radius: 999px; padding: 5px 13px; font-size: 12px; cursor: pointer; transition: .15s; }
+    .mk-tab:hover { border-color: #5b6cff; color: #5b6cff; }
+    .mk-tab.active { background: #5b6cff; border-color: #5b6cff; color: #fff; font-weight: 700; }
+    /* 分类教学说明 */
+    .mk-cat-desc { font-size: 12px; color: #5a6072; line-height: 1.6; background: #f7f8fd; border-left: 3px solid #5b6cff; border-radius: 0 8px 8px 0; padding: 8px 10px; margin-bottom: 8px; }
+    /* 知识点注解卡片 */
+    .kp-card { background: #f7f8fd; border: 1px solid #e7e9f3; border-left: 3px solid #5b6cff; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+    .kp-title { font-weight: 700; font-size: 13px; color: #1f2440; margin-bottom: 4px; }
+    .kp-body { font-size: 13px; color: #5a6072; line-height: 1.65; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -94,7 +105,7 @@
 
       <!-- ② 指标概览 -->
       <section class="block">
-        <div class="block-title">② 指标概览（按 流量/转化/客单价/留存/营销 分组）</div>
+        <div class="block-title">② 指标概览（点分类标签逐类学习）</div>
         <button class="btn btn-primary" id="metrics-overview" disabled>指标概览</button>
         <div id="metrics-overview-wrap"></div>
       </section>
@@ -139,6 +150,14 @@
         <div class="block-title">⑧ GMV 拆解（访客 × 支付转化率 × 客单价）</div>
         <button class="btn btn-primary" id="metrics-gmv" disabled>拆解 GMV</button>
         <div id="metrics-gmv-wrap"></div>
+      </section>
+
+      <!-- ⑨ 课堂知识点注解 -->
+      <section class="block">
+        <div class="block-title">📚 课堂知识点注解</div>
+        <p class="bench-logic">电商指标的核心概念卡片（口径对齐 / PV·UV / 转化率分母 / 客单价 / 复购率 / 退换货率 / GMV 乘积 / 同环比），可在课堂讲解时展开对照。</p>
+        <button class="btn btn-primary" id="metrics-knowledge" disabled>展开知识点注解</button>
+        <div id="metrics-knowledge-wrap"></div>
       </section>
 
       <footer class="disclaimer" id="metrics-disclaimer"></footer>

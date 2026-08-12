@@ -17,8 +17,10 @@
       indicators: 'ed-indicators',
       months: 'ed-months',
       trends: 'ed-trends',
+      categories: 'ed-categories',
       copy: 'ed-copy',
-      pitfalls: 'ed-pitfalls'
+      pitfalls: 'ed-pitfalls',
+      knowledge: 'ed-knowledge'
     },
     downloadName: 'metrics-config.json'
   });
